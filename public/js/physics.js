@@ -313,25 +313,26 @@ export class RiderSimulation {
         }
       }
 
-      // Gentle self-righting stabilization while mounted so small bumps don't randomly flip him
+      // Strong gyro-stability while mounted so fast drops & steep landings keep him on his skis
       if (this.mounted) {
-        const { tail, nose, head } = this.p;
-        const cx = (tail.x + nose.x) * 0.5;
+        const { tail, nose, head, shoulder } = this.p;
         const cy = (tail.y + nose.y) * 0.5;
-        // Subtle upward bias on head relative to sled keeps rider balanced over undulations
+        // Keep head & torso balanced upright above the skis
         const headRelY = head.y - cy;
-        if (headRelY > -24) {
-          head.y -= 0.035 * dt;
-          tail.y += 0.015 * dt;
-          nose.y += 0.015 * dt;
+        if (headRelY > -26) {
+          const pull = Math.min(0.18, (headRelY + 26) * 0.008) * dt;
+          head.y -= pull;
+          shoulder.y -= pull * 0.5;
+          tail.y += pull * 0.4;
+          nose.y += pull * 0.4;
         }
-        // Very gentle air-leveling so he lands on his skis more often
+        // Smooth air-leveling so jumps land cleanly on skis instead of nose-diving
         const tilt = nose.y - tail.y;
-        if (!anySledGrounded && Math.abs(tilt) > 6) {
-          nose.y -= Math.sign(tilt) * 0.018 * dt;
-          tail.y += Math.sign(tilt) * 0.018 * dt;
+        if (!anySledGrounded && Math.abs(tilt) > 3) {
+          const corr = Math.min(0.12, Math.abs(tilt) * 0.006) * Math.sign(tilt) * dt;
+          nose.y -= corr;
+          tail.y += corr;
         }
-        void cx;
       }
 
       // 3. Constraint relaxation
@@ -389,17 +390,17 @@ export class RiderSimulation {
       this.jumpCooldown = 0.28;
     }
 
-    // Check upside-down crash on sled (only on real sustained inversion, very forgiving)
+    // Check upside-down crash on sled (only on real sustained upside-down slide)
     if (this.mounted && anySledGrounded) {
       const { tail, backTop } = this.p;
       const upY = backTop.y - tail.y; // normally ~ -11 (backTop is above tail)
-      if (upY > 8.5) {
+      if (upY > 9.0) {
         this.upsideDownFrames++;
-        if (this.upsideDownFrames >= 16) {
+        if (this.upsideDownFrames >= 28) {
           this.bail();
         }
       } else {
-        this.upsideDownFrames = Math.max(0, this.upsideDownFrames - 2);
+        this.upsideDownFrames = Math.max(0, this.upsideDownFrames - 3);
       }
     } else {
       this.upsideDownFrames = 0;
@@ -483,8 +484,8 @@ export class RiderSimulation {
           pt.x += seg.nx * push;
           pt.y += seg.ny * push;
 
-          // Head hitting the track very hard causes a bail (forgiving on bumps)
-          if (pt.isHead && this.mounted && -vn > 2.4) {
+          // Only bail on a genuinely brutal inverted head-first slam
+          if (pt.isHead && this.mounted && -vn > 4.2 && this.p.head.y > this.p.butt.y - 6) {
             this.bail();
           }
 
@@ -533,7 +534,7 @@ export class RiderSimulation {
         const vy = pt.y - pt.oy;
         const vn = vx * nx + vy * ny;
 
-        if (pt.isHead && this.mounted && -vn > 2.4) {
+        if (pt.isHead && this.mounted && -vn > 4.2 && this.p.head.y > this.p.butt.y - 6) {
           this.bail();
         }
 
