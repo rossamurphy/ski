@@ -48,19 +48,19 @@ const zoomFitQuickBtn = document.getElementById('zoomFitQuickBtn');
 // ---------- App State ----------
 const state = {
   // Current stock data
-  activePresetId: 'GME21',
-  symbol: 'GME',
-  name: 'GameStop Short Squeeze (2021)',
+  activePresetId: 'ANT',
+  symbol: 'ANT',
+  name: 'Anthropic, PBC',
   currency: 'USD',
-  range: '6mo',
-  isLive: false,
+  range: '2d',
+  isLive: true,
   isPrivate: false,
   note: '',
   rawPoints: [],
 
   // Track & physics options
   steepness: 1.0,
-  smoothness: 1,
+  smoothness: 2,
   launchRamp: true,
   tool: 'pan', // 'pan' | 'ramp' | 'pencil' | 'eraser'
 
@@ -1293,5 +1293,5 @@ function tick() {
 
 // ---------- Boot ----------
 resizeCanvas();
-loadPreset('GME21');
+loadPreset('ANT');
 requestAnimationFrame(tick);

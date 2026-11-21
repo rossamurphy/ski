@@ -237,16 +237,16 @@ export const PRESETS = {
     symbol: 'ANT',
     name: 'Anthropic, PBC (Live)',
     currency: 'USD',
-    range: '6mo',
+    range: '2d',
     isLive: true,
   },
 };
 
 export const TOOLBAR_PRESET_IDS = [
+  'ANT',
   'GME21',
   'CRASH08',
   'DOTCOM',
   'BTC',
   'NVDA',
-  'ANT',
 ];

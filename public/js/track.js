@@ -58,7 +58,7 @@ export function buildLaunchRamp(anchorX, anchorY) {
 export function buildStockTrack(rawPoints, options = {}) {
   const {
     steepness = 1.0, // 0.3 to 2.5
-    smoothness = 1, // 0 to 5 passes
+    smoothness = 2, // 0 to 20 passes
     launchRamp = true,
     targetWidth = 4600,
     baseHeight = 620,
@@ -131,21 +131,28 @@ export function buildStockTrack(rawPoints, options = {}) {
     });
   }
 
-  // Optional sleek curved drop-in launch ramp spliced smoothly into point 0 (movable later)
+  // Anchor launch ramp at the highest peak (max price = smallest y) on the chart
+  let peakPoint = worldPoints[0];
+  for (const pt of worldPoints) {
+    if (pt.y < peakPoint.y) peakPoint = pt;
+  }
+
   let rampSegments = [];
-  let rampAnchor = { x: worldPoints[0].x, y: worldPoints[0].y };
+  let rampAnchor = { x: peakPoint.x, y: peakPoint.y };
   let rampHandle = null;
-  let spawn = { x: worldPoints[0].x + 25, y: worldPoints[0].y - 45 };
+  let spawn = { x: peakPoint.x + 12, y: peakPoint.y - 36 };
 
   if (launchRamp) {
-    const ramp = buildLaunchRamp(worldPoints[0].x, worldPoints[0].y);
+    const ramp = buildLaunchRamp(peakPoint.x, peakPoint.y);
     rampSegments = ramp.rampSegments;
     spawn = ramp.spawn;
     rampHandle = ramp.handle;
   }
 
   const startPrice = worldPoints[0].rawPrice;
-  const minX = launchRamp ? worldPoints[0].x - 460 : worldPoints[0].x;
+  const minX = launchRamp
+    ? Math.min(worldPoints[0].x, peakPoint.x - 360)
+    : worldPoints[0].x;
   const maxX = worldPoints[worldPoints.length - 1].x;
   let minY = Infinity;
   let maxY = -Infinity;
@@ -154,7 +161,7 @@ export function buildStockTrack(rawPoints, options = {}) {
     if (p.y > maxY) maxY = p.y;
   }
   if (launchRamp) {
-    minY = Math.min(minY, worldPoints[0].y - 260);
+    minY = Math.min(minY, peakPoint.y - 150);
   }
 
   function getSampleAtX(worldX) {
@@ -241,7 +248,7 @@ export function formatPrice(price, currency = 'USD') {
 
 export function formatDate(ms, range = '1y') {
   const d = new Date(ms);
-  if (range === '1d' || range === '5d') {
+  if (range === '1d' || range === '2d' || range === '5d') {
     return d.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',

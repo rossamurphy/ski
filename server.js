@@ -20,6 +20,7 @@ const MIME_TYPES = {
 
 const RANGE_INTERVAL_MAP = {
   '1d': '5m',
+  '2d': '5m',
   '5d': '15m',
   '1mo': '1d',
   '6mo': '1d',

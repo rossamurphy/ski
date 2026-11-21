@@ -30,10 +30,11 @@
 
       <div id="timeframeBar" class="timeframe-bar" aria-label="Timeframe">
         <button data-range="1d">1D</button>
+        <button data-range="2d" class="active">2D</button>
         <button data-range="5d">5D</button>
         <button data-range="1mo">1M</button>
         <button data-range="6mo">6M</button>
-        <button data-range="1y" class="active">1Y</button>
+        <button data-range="1y">1Y</button>
         <button data-range="5y">5Y</button>
         <button data-range="max">MAX</button>
       </div>
@@ -83,8 +84,8 @@
           <input id="steepSlider" type="range" min="0.35" max="2.4" step="0.05" value="1.0" />
         </label>
         <label class="tune-row">
-          <span>Smoothness <strong id="smoothVal">1</strong></span>
-          <input id="smoothSlider" type="range" min="0" max="5" step="1" value="1" />
+          <span>Smoothness <strong id="smoothVal">2</strong></span>
+          <input id="smoothSlider" type="range" min="0" max="20" step="1" value="2" />
         </label>
         <label class="tune-check">
           <input id="rampToggle" type="checkbox" checked />
