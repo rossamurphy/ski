@@ -58,7 +58,7 @@ export function buildLaunchRamp(anchorX, anchorY) {
 export function buildStockTrack(rawPoints, options = {}) {
   const {
     steepness = 1.0, // 0.3 to 2.5
-    smoothness = 2, // 0 to 20 passes
+    smoothness = 5, // 0 to 20 passes
     tiltDeg = 0, // -40 to +40 degrees (+ tilts right side downhill)
     launchRamp = true,
     anchorAtInitialPeak = false,

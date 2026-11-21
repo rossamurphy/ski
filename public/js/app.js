@@ -59,7 +59,7 @@ const state = {
 
   // Track & physics options
   steepness: 1.0,
-  smoothness: 2,
+  smoothness: 5,
   tiltDeg: 0,
   launchRamp: true,
   tool: 'pan', // 'pan' | 'ramp' | 'pencil' | 'eraser'
