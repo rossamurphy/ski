@@ -155,14 +155,14 @@ function resetRider(centerCamera = true) {
   updateHud(true);
 }
 
-function rebuildTrack() {
+function rebuildTrack(resetCamera = true) {
   state.track = buildStockTrack(state.rawPoints, {
     steepness: state.steepness,
     smoothness: state.smoothness,
     launchRamp: state.launchRamp,
   });
   rebuildGrid();
-  resetRider(true);
+  resetRider(resetCamera);
 }
 
 function fitWholeChart() {
@@ -491,18 +491,18 @@ tuneBtn.addEventListener('click', () => {
 steepSlider.addEventListener('input', () => {
   state.steepness = Number(steepSlider.value);
   steepVal.textContent = `${state.steepness.toFixed(2)}×`;
-  rebuildTrack();
+  rebuildTrack(false);
 });
 
 smoothSlider.addEventListener('input', () => {
   state.smoothness = Number(smoothSlider.value);
   smoothVal.textContent = String(state.smoothness);
-  rebuildTrack();
+  rebuildTrack(false);
 });
 
 rampToggle.addEventListener('change', () => {
   state.launchRamp = rampToggle.checked;
-  rebuildTrack();
+  rebuildTrack(false);
 });
 
 fitViewBtn.addEventListener('click', () => {
