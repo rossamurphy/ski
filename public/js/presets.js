@@ -209,7 +209,7 @@ export const PRESETS = {
     symbol: 'NVDA',
     name: 'NVIDIA Corp (Live)',
     currency: 'USD',
-    range: '1y',
+    range: '1mo',
     isLive: true,
     fallbackPoints: interpolateKeyframes(
       [
@@ -244,9 +244,7 @@ export const PRESETS = {
 
 export const TOOLBAR_PRESET_IDS = [
   'ANT',
-  'GME21',
+  'NVDA',
   'CRASH08',
   'DOTCOM',
-  'BTC',
-  'NVDA',
 ];

@@ -363,7 +363,7 @@ function selectSearchResult(item) {
   if (item.symbol.startsWith('PRIVATE:')) {
     loadPreset(item.symbol);
   } else {
-    loadLiveTicker(item.symbol, state.isLive ? state.range : '1y', item.name);
+    loadLiveTicker(item.symbol, state.isLive ? state.range : '2d', item.name);
   }
 }
 
