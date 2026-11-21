@@ -303,6 +303,109 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Info (i) Button & Popover */
+.info-wrap {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 35;
+}
+
+.info-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  backdrop-filter: blur(8px);
+  color: var(--ink);
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, transform 0.12s;
+}
+
+.info-btn:hover {
+  background: #ffffff;
+  transform: scale(1.05);
+}
+
+.info-popover {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  width: 300px;
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.info-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.info-popover ul {
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.info-popover strong {
+  color: var(--ink);
+}
+
+/* Dedicated Draw Section in Toolbar */
+.draw-section {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 3px 5px 3px 8px;
+}
+
+.section-tag {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #1d4ed8;
+  margin-right: 2px;
+  user-select: none;
+}
+
+.draw-section button.btn-draw {
+  background: #ffffff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.draw-section button.btn-draw:hover {
+  background: #dbeafe;
+}
+
+.draw-section button.btn-draw.active {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+
 /* Zoom Controls */
 .zoom-controls {
   position: absolute;

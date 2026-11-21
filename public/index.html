@@ -34,12 +34,13 @@
         <button data-range="5d">5D</button>
         <button data-range="1mo">1M</button>
         <button data-range="6mo">6M</button>
+        <button data-range="1y">1Y</button>
       </div>
 
       <label class="top-smooth" title="Smoothness (0 = raw ticks, 20 = ultra-smooth)">
         <span>Smooth</span>
-        <input id="smoothSlider" type="range" min="0" max="20" step="1" value="10" />
-        <strong id="smoothVal">10</strong>
+        <input id="smoothSlider" type="range" min="0" max="20" step="1" value="2" />
+        <strong id="smoothVal">2</strong>
       </label>
 
       <label class="top-smooth" title="Tilt / rotate the whole chart (+ tilts downhill, - tilts uphill)">
@@ -75,6 +76,20 @@
         <div id="hudNote" class="hud-note hidden"></div>
       </div>
 
+      <!-- Info (i) Help Button & Popover -->
+      <div class="info-wrap" id="infoWrap">
+        <button id="infoBtn" class="info-btn" aria-label="How to play" title="How to play">i</button>
+        <div id="infoPopover" class="info-popover hidden">
+          <div class="info-title">How to Play Stock Ski</div>
+          <ul>
+            <li><strong>Pick a stock</strong> — search any ticker or company up top, or pick a preset &amp; timeframe.</li>
+            <li><strong>✏️ Draw on the chart</strong> — sketch bridges, ramps, and catch-curves right over the price line so your skier survives drops and clears climbs.</li>
+            <li><strong>📐 Move Ramp &amp; ↻ Rotate</strong> — drag the blue on-ramp anywhere, or tilt the whole chart downhill.</li>
+            <li><strong>Smooth &amp; Zoom</strong> — use the top-right sliders, pinch/scroll, or the <strong>+ / −</strong> buttons. Hit <strong>Space</strong> to Play/Pause and <strong>R</strong> to Reset.</li>
+          </ul>
+        </div>
+      </div>
+
       <!-- Zoom Controls (great for iPad / touch) -->
       <div class="zoom-controls" aria-label="Zoom controls">
         <button id="zoomInBtn" title="Zoom in">+</button>
@@ -102,7 +117,7 @@
       <!-- Bottom Floating Line-Rider Toolbar -->
       <div class="toolbar">
         <div class="tool-group">
-          <button id="playBtn" class="btn-primary" title="Play / Pause (P)">
+          <button id="playBtn" class="btn-primary" title="Play / Pause (Space)">
             <span id="playIcon">▶</span> <span id="playLabel">Play</span>
           </button>
           <button id="resetBtn" title="Reset rider to start (R)">↺ Reset</button>
@@ -110,7 +125,22 @@
 
         <div class="divider"></div>
 
-        <div class="tool-group" id="drawTools">
+        <!-- Dedicated Draw Section -->
+        <div class="draw-section" id="drawSection">
+          <span class="section-tag">DRAW</span>
+          <button data-tool="pencil" class="btn-draw" title="Draw solid ink ramps &amp; bridges over the chart (4)">
+            ✏️ Draw
+          </button>
+          <button data-tool="eraser" title="Erase your drawn lines (5)">
+            🧹 Erase
+          </button>
+          <button id="undoBtn" title="Undo last drawn stroke (Ctrl+Z)">↶</button>
+          <button id="clearDrawBtn" title="Clear all user-drawn lines">Clear</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="tool-group" id="navTools">
           <button data-tool="pan" class="active" title="Pan camera (drag) or pinch/scroll to zoom (1)">
             ✋ Pan
           </button>
@@ -120,24 +150,11 @@
           <button data-tool="ramp" title="Click or drag anywhere to move the starting on-ramp (3)">
             📐 Move Ramp
           </button>
-          <button data-tool="pencil" title="Draw solid ink track on chart (4)">
-            ✏️ Draw
-          </button>
-          <button data-tool="eraser" title="Erase your drawn lines (5)">
-            🧹 Erase
-          </button>
         </div>
 
         <div class="divider"></div>
 
-        <div class="tool-group">
-          <button id="undoBtn" title="Undo last drawn stroke (Ctrl+Z)">↶</button>
-          <button id="clearDrawBtn" title="Clear all user-drawn lines">Clear</button>
-        </div>
-
-        <div class="divider"></div>
-
-        <button id="tuneBtn" title="Adjust chart steepness, smoothness &amp; launch ramp">
+        <button id="tuneBtn" title="Adjust chart steepness &amp; launch ramp">
           ⚙ Tune
         </button>
       </div>

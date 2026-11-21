@@ -29,9 +29,12 @@ const playBtn = document.getElementById('playBtn');
 const playIcon = document.getElementById('playIcon');
 const playLabel = document.getElementById('playLabel');
 const resetBtn = document.getElementById('resetBtn');
-const drawToolsEl = document.getElementById('drawTools');
+const toolbarEl = document.querySelector('.toolbar');
 const undoBtn = document.getElementById('undoBtn');
 const clearDrawBtn = document.getElementById('clearDrawBtn');
+const infoWrap = document.getElementById('infoWrap');
+const infoBtn = document.getElementById('infoBtn');
+const infoPopover = document.getElementById('infoPopover');
 
 const tuneBtn = document.getElementById('tuneBtn');
 const tunePopover = document.getElementById('tunePopover');
@@ -62,7 +65,7 @@ const state = {
 
   // Track & physics options
   steepness: 1.0,
-  smoothness: 10,
+  smoothness: 2,
   tiltDeg: 0,
   launchRamp: true,
   tool: 'pan', // 'pan' | 'rotate' | 'ramp' | 'pencil' | 'eraser'
@@ -360,11 +363,8 @@ function selectSearchResult(item) {
   searchResults = [];
   searchDropdown.classList.add('hidden');
   searchInput.blur();
-  if (item.symbol.startsWith('PRIVATE:')) {
-    loadPreset(item.symbol);
-  } else {
-    loadLiveTicker(item.symbol, state.isLive ? state.range : '2d', item.name);
-  }
+  const defaultRange = item.symbol.toUpperCase() === 'ANT' ? '2d' : '1y';
+  loadLiveTicker(item.symbol, defaultRange, item.name);
 }
 
 searchInput.addEventListener('input', () => {
@@ -421,6 +421,24 @@ document.addEventListener('click', (e) => {
   if (!e.target.closest('#tunePopover') && !e.target.closest('#tuneBtn')) {
     tunePopover.classList.add('hidden');
   }
+  if (!e.target.closest('#infoWrap')) {
+    infoPinned = false;
+    infoPopover.classList.add('hidden');
+  }
+});
+
+// Info (i) hover + click popover
+let infoPinned = false;
+infoWrap.addEventListener('mouseenter', () => {
+  infoPopover.classList.remove('hidden');
+});
+infoWrap.addEventListener('mouseleave', () => {
+  if (!infoPinned) infoPopover.classList.add('hidden');
+});
+infoBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  infoPinned = !infoPinned;
+  infoPopover.classList.toggle('hidden', !infoPinned);
 });
 
 // ---------- Presets & Timeframe UI ----------
@@ -461,13 +479,13 @@ resetBtn.addEventListener('click', () => resetRider(true));
 
 function setTool(tool) {
   state.tool = tool;
-  for (const btn of drawToolsEl.querySelectorAll('button[data-tool]')) {
+  for (const btn of toolbarEl.querySelectorAll('button[data-tool]')) {
     btn.classList.toggle('active', btn.dataset.tool === tool);
   }
   canvas.classList.toggle('cursor-crosshair', tool !== 'pan');
 }
 
-drawToolsEl.addEventListener('click', (e) => {
+toolbarEl.addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-tool]');
   if (!btn) return;
   setTool(btn.dataset.tool);

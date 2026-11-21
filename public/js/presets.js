@@ -209,7 +209,7 @@ export const PRESETS = {
     symbol: 'NVDA',
     name: 'NVIDIA Corp (Live)',
     currency: 'USD',
-    range: '1mo',
+    range: '1y',
     isLive: true,
     fallbackPoints: interpolateKeyframes(
       [

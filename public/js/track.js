@@ -58,7 +58,7 @@ export function buildLaunchRamp(anchorX, anchorY) {
 export function buildStockTrack(rawPoints, options = {}) {
   const {
     steepness = 1.0, // 0.3 to 2.5
-    smoothness = 10, // 0 to 20 passes
+    smoothness = 2, // 0 to 20 passes
     tiltDeg = 0, // -40 to +40 degrees (+ tilts right side downhill)
     launchRamp = true,
     targetWidth = 4600,
@@ -140,15 +140,10 @@ export function buildStockTrack(rawPoints, options = {}) {
     });
   }
 
-  // Anchor launch ramp cleanly over the highest peak (max price = smallest y)
-  // Slightly past & above the peak vertex so the sled clears the uphill side cleanly
-  let peakIdx = 0;
-  for (let i = 1; i < worldPoints.length; i++) {
-    if (worldPoints[i].y < worldPoints[peakIdx].y) peakIdx = i;
-  }
-  const peakPoint = worldPoints[peakIdx];
-  const rampExitX = peakIdx < worldPoints.length - 1 ? peakPoint.x + 10 : peakPoint.x;
-  const rampExitY = peakPoint.y - 6;
+  // Anchor launch ramp at the beginning (top-left above the start of the stock price line)
+  const firstPt = worldPoints[0];
+  const rampExitX = firstPt.x + 6;
+  const rampExitY = firstPt.y - 6;
 
   let rampSegments = [];
   let rampAnchor = { x: rampExitX, y: rampExitY };
@@ -164,7 +159,7 @@ export function buildStockTrack(rawPoints, options = {}) {
 
   const startPrice = worldPoints[0].rawPrice;
   const minX = launchRamp
-    ? Math.min(worldPoints[0].x, peakPoint.x - 360)
+    ? Math.min(worldPoints[0].x, rampExitX - 360)
     : worldPoints[0].x;
   const maxX = worldPoints[worldPoints.length - 1].x;
   let minY = Infinity;
@@ -174,7 +169,7 @@ export function buildStockTrack(rawPoints, options = {}) {
     if (p.y > maxY) maxY = p.y;
   }
   if (launchRamp) {
-    minY = Math.min(minY, peakPoint.y - 150);
+    minY = Math.min(minY, rampExitY - 150);
   }
 
   function getSampleAtX(worldX) {
