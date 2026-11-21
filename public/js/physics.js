@@ -225,7 +225,7 @@ export class RiderSimulation {
   step(grid, mode, input, trackMaxX) {
     const SUBSTEPS = 6;
     const dt = 1 / SUBSTEPS;
-    const GRAVITY = 0.17 * dt * dt;
+    const GRAVITY = 0.21 * dt * dt;
 
     this.time += 1 / 60;
     if (this.jumpCooldown > 0) this.jumpCooldown -= 1 / 60;
@@ -248,8 +248,8 @@ export class RiderSimulation {
     let groundCount = 0;
 
     for (let sub = 0; sub < SUBSTEPS; sub++) {
-      // 1. Verlet integration
-      const drag = this.tucking ? 0.9996 : 0.9988;
+      // 1. Verlet integration (near-zero air drag like original Line Rider)
+      const drag = 0.99985;
       for (const pt of this.points) {
         const vx = (pt.x - pt.ox) * drag;
         const vy = (pt.y - pt.oy) * drag;
@@ -488,16 +488,21 @@ export class RiderSimulation {
             this.bail();
           }
 
-          // Friction (low for smooth ski glide, but settles cleanly when nearly stopped)
+          // Friction: near-frictionless ice glide on skis + crisp downhill acceleration,
+          // while still settling cleanly to a stop when nearly stationary
           const vt = vx * seg.tx + vy * seg.ty;
-          const isNearlyStopped = Math.abs(vt) < 0.06;
+          const isNearlyStopped = Math.abs(vt) < 0.04;
           const friction = isNearlyStopped
-            ? 0.25
+            ? 0.22
             : pt.isRider && !this.mounted
-              ? 0.08
-              : 0.0025;
-          pt.ox = pt.x - (vt * (1 - friction)) * seg.tx;
-          pt.oy = pt.y - (vt * (1 - friction)) * seg.ty;
+              ? 0.05
+              : 0.00025;
+          // Extra downhill carve acceleration when sliding down a slope (seg.ty > 0)
+          const downhillBoost =
+            !pt.isRider && seg.ty > 0.05 && vt > 0 ? seg.ty * 0.065 * dt * dt : 0;
+          const nextVt = vt * (1 - friction) + downhillBoost;
+          pt.ox = pt.x - nextVt * seg.tx;
+          pt.oy = pt.y - nextVt * seg.ty;
 
           pt.grounded = true;
           pt.groundNx = seg.nx;
