@@ -84,8 +84,8 @@
           <ul>
             <li><strong>Pick a stock</strong> — search any ticker or company up top, or pick a preset &amp; timeframe.</li>
             <li><strong>✏️ Draw on the chart</strong> — sketch bridges, ramps, and catch-curves right over the price line so your skier survives drops and clears climbs.</li>
-            <li><strong>📐 Move Ramp &amp; ↻ Rotate</strong> — drag the blue on-ramp anywhere, or tilt the whole chart downhill.</li>
-            <li><strong>Smooth &amp; Zoom</strong> — use the top-right sliders, pinch/scroll, or the <strong>+ / −</strong> buttons. Hit <strong>Space</strong> to Play/Pause and <strong>R</strong> to Reset.</li>
+            <li><strong>📐 Move Ramp</strong> — drag the blue on-ramp anywhere on the chart to drop in wherever you want.</li>
+            <li><strong>Smooth, Tilt &amp; Zoom</strong> — use the top-right sliders to smooth or tilt the chart downhill, pinch/scroll or use <strong>+ / −</strong> to zoom, <strong>Space</strong> to Play/Pause, <strong>R</strong> to Reset.</li>
           </ul>
         </div>
       </div>
@@ -99,20 +99,6 @@
 
       <!-- Toast / Error Banner -->
       <div id="toast" class="toast hidden"></div>
-
-      <!-- Track Tuning Popover -->
-      <div id="tunePopover" class="tune-popover hidden">
-        <div class="tune-title">Track Physics &amp; Shape</div>
-        <label class="tune-row">
-          <span>Steepness <strong id="steepVal">1.0×</strong></span>
-          <input id="steepSlider" type="range" min="0.35" max="2.4" step="0.05" value="1.0" />
-        </label>
-        <label class="tune-check">
-          <input id="rampToggle" type="checkbox" checked />
-          <span>Starting Launch Ramp</span>
-        </label>
-        <button id="fitViewBtn" class="tune-btn">Zoom to Fit Whole Chart</button>
-      </div>
 
       <!-- Bottom Floating Line-Rider Toolbar -->
       <div class="toolbar">
@@ -128,10 +114,10 @@
         <!-- Dedicated Draw Section -->
         <div class="draw-section" id="drawSection">
           <span class="section-tag">DRAW</span>
-          <button data-tool="pencil" class="btn-draw" title="Draw solid ink ramps &amp; bridges over the chart (4)">
+          <button data-tool="pencil" class="btn-draw" title="Draw solid ink ramps &amp; bridges over the chart (3)">
             ✏️ Draw
           </button>
-          <button data-tool="eraser" title="Erase your drawn lines (5)">
+          <button data-tool="eraser" title="Erase your drawn lines (4)">
             🧹 Erase
           </button>
           <button id="undoBtn" title="Undo last drawn stroke (Ctrl+Z)">↶</button>
@@ -144,19 +130,10 @@
           <button data-tool="pan" class="active" title="Pan camera (drag) or pinch/scroll to zoom (1)">
             ✋ Pan
           </button>
-          <button data-tool="rotate" title="Drag up/down on canvas to rotate/tilt the whole chart (2)">
-            ↻ Rotate
-          </button>
-          <button data-tool="ramp" title="Click or drag anywhere to move the starting on-ramp (3)">
+          <button data-tool="ramp" title="Click or drag anywhere to move the starting on-ramp (2)">
             📐 Move Ramp
           </button>
         </div>
-
-        <div class="divider"></div>
-
-        <button id="tuneBtn" title="Adjust chart steepness &amp; launch ramp">
-          ⚙ Tune
-        </button>
       </div>
     </main>
 

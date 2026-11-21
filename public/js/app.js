@@ -36,16 +36,10 @@ const infoWrap = document.getElementById('infoWrap');
 const infoBtn = document.getElementById('infoBtn');
 const infoPopover = document.getElementById('infoPopover');
 
-const tuneBtn = document.getElementById('tuneBtn');
-const tunePopover = document.getElementById('tunePopover');
-const steepSlider = document.getElementById('steepSlider');
-const steepVal = document.getElementById('steepVal');
 const smoothSlider = document.getElementById('smoothSlider');
 const smoothVal = document.getElementById('smoothVal');
 const tiltSlider = document.getElementById('tiltSlider');
 const tiltVal = document.getElementById('tiltVal');
-const rampToggle = document.getElementById('rampToggle');
-const fitViewBtn = document.getElementById('fitViewBtn');
 const zoomInBtn = document.getElementById('zoomInBtn');
 const zoomOutBtn = document.getElementById('zoomOutBtn');
 const zoomFitQuickBtn = document.getElementById('zoomFitQuickBtn');
@@ -68,10 +62,11 @@ const state = {
   smoothness: 2,
   tiltDeg: 0,
   launchRamp: true,
-  tool: 'pan', // 'pan' | 'rotate' | 'ramp' | 'pencil' | 'eraser'
+  tool: 'pan', // 'pan' | 'ramp' | 'pencil' | 'eraser'
 
   // Built track + user-drawn strokes (each stroke is an array of segments)
   track: null,
+  customRampAnchor: null,
   draggingRamp: false,
   rampDragOffset: { x: 0, y: 0 },
   userStrokes: [], // Array<{ type: 'ink', segments: Array<{ax,ay,bx,by,type}> }>
@@ -116,10 +111,8 @@ function getSpawnPoint() {
 
 function moveLaunchRamp(anchorX, anchorY) {
   if (!state.track) return;
-  if (!state.launchRamp) {
-    state.launchRamp = true;
-    rampToggle.checked = true;
-  }
+  state.launchRamp = true;
+  state.customRampAnchor = { x: anchorX, y: anchorY };
   const ramp = buildLaunchRamp(anchorX, anchorY);
   state.track.rampSegments = ramp.rampSegments;
   state.track.spawn = ramp.spawn;
@@ -162,12 +155,23 @@ function resetRider(centerCamera = true) {
 }
 
 function rebuildTrack(resetCamera = true) {
+  if (resetCamera) {
+    state.customRampAnchor = null;
+  }
   state.track = buildStockTrack(state.rawPoints, {
     steepness: state.steepness,
     smoothness: state.smoothness,
     tiltDeg: state.tiltDeg,
     launchRamp: state.launchRamp,
   });
+  // Preserve user-positioned ramp when smoothing or tilting
+  if (!resetCamera && state.customRampAnchor && state.launchRamp) {
+    const ramp = buildLaunchRamp(state.customRampAnchor.x, state.customRampAnchor.y);
+    state.track.rampSegments = ramp.rampSegments;
+    state.track.spawn = ramp.spawn;
+    state.track.rampAnchor = ramp.anchor;
+    state.track.rampHandle = ramp.handle;
+  }
   rebuildGrid();
   resetRider(resetCamera);
 }
@@ -418,9 +422,6 @@ document.addEventListener('click', (e) => {
   if (!e.target.closest('.search-wrap')) {
     searchDropdown.classList.add('hidden');
   }
-  if (!e.target.closest('#tunePopover') && !e.target.closest('#tuneBtn')) {
-    tunePopover.classList.add('hidden');
-  }
   if (!e.target.closest('#infoWrap')) {
     infoPinned = false;
     infoPopover.classList.add('hidden');
@@ -506,16 +507,6 @@ clearDrawBtn.addEventListener('click', () => {
   }
 });
 
-tuneBtn.addEventListener('click', () => {
-  tunePopover.classList.toggle('hidden');
-});
-
-steepSlider.addEventListener('input', () => {
-  state.steepness = Number(steepSlider.value);
-  steepVal.textContent = `${state.steepness.toFixed(2)}×`;
-  rebuildTrack(false);
-});
-
 function setTilt(deg) {
   const clamped = Math.max(-40, Math.min(40, Math.round(deg)));
   if (clamped === state.tiltDeg) return;
@@ -533,16 +524,6 @@ smoothSlider.addEventListener('input', () => {
 
 tiltSlider.addEventListener('input', () => {
   setTilt(Number(tiltSlider.value));
-});
-
-rampToggle.addEventListener('change', () => {
-  state.launchRamp = rampToggle.checked;
-  rebuildTrack(false);
-});
-
-fitViewBtn.addEventListener('click', () => {
-  fitWholeChart();
-  tunePopover.classList.add('hidden');
 });
 
 function zoomBy(factor) {
@@ -840,15 +821,12 @@ window.addEventListener('keydown', (e) => {
       setTool('pan');
       break;
     case 'Digit2':
-      setTool('rotate');
-      break;
-    case 'Digit3':
       setTool('ramp');
       break;
-    case 'Digit4':
+    case 'Digit3':
       setTool('pencil');
       break;
-    case 'Digit5':
+    case 'Digit4':
       setTool('eraser');
       break;
   }
