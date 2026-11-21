@@ -738,12 +738,20 @@ canvas.addEventListener(
   'wheel',
   (e) => {
     e.preventDefault();
+    let dy = e.deltaY;
+    if (e.deltaMode === 1) dy *= 18; // DOM_DELTA_LINE
+    else if (e.deltaMode === 2) dy *= 200; // DOM_DELTA_PAGE
+    if (Math.abs(dy) < 0.5) return;
+
     const rect = canvas.getBoundingClientRect();
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
     const before = screenToWorld(sx, sy);
 
-    const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    // Proportional exponential zoom (smooth on trackpads & mouse wheels, no inertia spikes)
+    const clamped = Math.max(-120, Math.min(120, dy));
+    const sensitivity = e.ctrlKey ? 0.006 : 0.0022;
+    const factor = Math.exp(-clamped * sensitivity);
     const nextZoom = Math.max(0.12, Math.min(2.6, state.cam.zoom * factor));
     state.cam.zoom = nextZoom;
     state.cam.targetZoom = nextZoom;
@@ -1252,15 +1260,11 @@ function tick() {
     if (state.followRider) {
       const center = sim.getCenter();
       const vel = sim.getVelocity();
-      // Smooth look-ahead camera
+      // Smooth look-ahead camera (preserves user's chosen zoom level)
       const targetX = center.x + vel.vx * 36 + 80;
       const targetY = center.y + vel.vy * 18;
       state.cam.x += (targetX - state.cam.x) * 0.1;
       state.cam.y += (targetY - state.cam.y) * 0.1;
-
-      // Subtle dynamic zoom out at high speeds
-      const desiredZoom = Math.max(0.55, Math.min(1.05, 1.05 - sim.speed * 0.022));
-      state.cam.zoom += (desiredZoom - state.cam.zoom) * 0.03;
     }
     updateHud();
   }
