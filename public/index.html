@@ -75,14 +75,6 @@
       <!-- Toast / Error Banner -->
       <div id="toast" class="toast hidden"></div>
 
-      <!-- Controls Hint Pill (visible in Controls mode) -->
-      <div id="controlsHint" class="controls-hint hidden">
-        <span><kbd>←</kbd><kbd>→</kbd> Lean / Pump</span>
-        <span><kbd>↑</kbd> / <kbd>Space</kbd> Jump</span>
-        <span><kbd>↓</kbd> Tuck</span>
-        <span><kbd>Shift</kbd> / <kbd>W</kbd> Boost</span>
-      </div>
-
       <!-- Track Tuning Popover -->
       <div id="tunePopover" class="tune-popover hidden">
         <div class="tune-title">Track Physics &amp; Shape</div>
@@ -116,11 +108,11 @@
           <button data-tool="pan" class="active" title="Pan camera (drag) or pinch/scroll to zoom (1)">
             ✋ Pan
           </button>
-          <button data-tool="pencil" title="Draw solid ink track on chart (2)">
-            ✏️ Draw
+          <button data-tool="ramp" title="Click or drag anywhere to move the starting on-ramp (2)">
+            📐 Move Ramp
           </button>
-          <button data-tool="boost" title="Draw red boost/accelerator track (3)">
-            ⚡ Boost
+          <button data-tool="pencil" title="Draw solid ink track on chart (3)">
+            ✏️ Draw
           </button>
           <button data-tool="eraser" title="Erase your drawn lines (4)">
             🧹 Erase
@@ -135,11 +127,6 @@
         </div>
 
         <div class="divider"></div>
-
-        <div class="mode-toggle" title="Switch between classic passive Line Rider and light keyboard controls">
-          <button id="modeClassic" class="active">Classic</button>
-          <button id="modeControls">Controls</button>
-        </div>
 
         <button id="tuneBtn" title="Adjust chart steepness, smoothness &amp; launch ramp">
           ⚙ Tune

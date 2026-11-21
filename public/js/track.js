@@ -19,6 +19,42 @@ export function smoothPoints(points, passes) {
   return curr;
 }
 
+export function buildLaunchRamp(anchorX, anchorY) {
+  const rampLen = 360;
+  const rampHeight = 135;
+  const steps = 20;
+  const rampPts = [];
+  for (let i = 0; i <= steps; i++) {
+    const u = i / steps; // 0 at top-left, 1 at anchor (exit)
+    const x = anchorX - rampLen * (1 - u);
+    const ease = Math.pow(1 - u, 1.85);
+    const y = anchorY - rampHeight * ease;
+    rampPts.push({ x, y });
+  }
+  const rampSegments = [];
+  for (let i = 0; i < rampPts.length - 1; i++) {
+    rampSegments.push({
+      ax: rampPts[i].x,
+      ay: rampPts[i].y,
+      bx: rampPts[i + 1].x,
+      by: rampPts[i + 1].y,
+      type: 'ramp',
+      isUp: false,
+    });
+  }
+  const spawn = {
+    x: rampPts[1].x + 14,
+    y: rampPts[1].y - 28,
+  };
+  const mid = rampPts[Math.floor(steps * 0.5)];
+  return {
+    rampSegments,
+    spawn,
+    anchor: { x: anchorX, y: anchorY },
+    handle: { x: mid.x, y: mid.y + 18 },
+  };
+}
+
 export function buildStockTrack(rawPoints, options = {}) {
   const {
     steepness = 1.0, // 0.3 to 2.5
@@ -95,38 +131,17 @@ export function buildStockTrack(rawPoints, options = {}) {
     });
   }
 
-  // Optional sleek curved drop-in launch ramp spliced smoothly into point 0
-  const rampSegments = [];
+  // Optional sleek curved drop-in launch ramp spliced smoothly into point 0 (movable later)
+  let rampSegments = [];
+  let rampAnchor = { x: worldPoints[0].x, y: worldPoints[0].y };
+  let rampHandle = null;
   let spawn = { x: worldPoints[0].x + 25, y: worldPoints[0].y - 45 };
 
   if (launchRamp) {
-    const p0 = worldPoints[0];
-    const rampLen = 360;
-    const rampHeight = 135;
-    const steps = 20;
-    const rampPts = [];
-    for (let i = 0; i <= steps; i++) {
-      const u = i / steps; // 0 at top-left, 1 at p0
-      // Gentle Line Rider drop-in curve into the first price point
-      const x = p0.x - rampLen * (1 - u);
-      const ease = Math.pow(1 - u, 1.85);
-      const y = p0.y - rampHeight * ease;
-      rampPts.push({ x, y });
-    }
-    for (let i = 0; i < rampPts.length - 1; i++) {
-      rampSegments.push({
-        ax: rampPts[i].x,
-        ay: rampPts[i].y,
-        bx: rampPts[i + 1].x,
-        by: rampPts[i + 1].y,
-        type: 'ramp',
-        isUp: false,
-      });
-    }
-    spawn = {
-      x: rampPts[1].x + 14,
-      y: rampPts[1].y - 28,
-    };
+    const ramp = buildLaunchRamp(worldPoints[0].x, worldPoints[0].y);
+    rampSegments = ramp.rampSegments;
+    spawn = ramp.spawn;
+    rampHandle = ramp.handle;
   }
 
   const startPrice = worldPoints[0].rawPrice;
@@ -183,6 +198,8 @@ export function buildStockTrack(rawPoints, options = {}) {
   return {
     segments,
     rampSegments,
+    rampAnchor,
+    rampHandle,
     worldPoints,
     spawn,
     dx,

@@ -1,5 +1,5 @@
 import { PRESETS, TOOLBAR_PRESET_IDS } from './presets.js';
-import { buildStockTrack, formatPrice, formatDate } from './track.js';
+import { buildStockTrack, buildLaunchRamp, formatPrice, formatDate } from './track.js';
 import { SpatialGrid, RiderSimulation } from './physics.js';
 
 // ---------- DOM References ----------
@@ -23,7 +23,6 @@ const hudAir = document.getElementById('hudAir');
 const hudStatus = document.getElementById('hudStatus');
 const hudNote = document.getElementById('hudNote');
 
-const controlsHint = document.getElementById('controlsHint');
 const toastEl = document.getElementById('toast');
 
 const playBtn = document.getElementById('playBtn');
@@ -33,8 +32,6 @@ const resetBtn = document.getElementById('resetBtn');
 const drawToolsEl = document.getElementById('drawTools');
 const undoBtn = document.getElementById('undoBtn');
 const clearDrawBtn = document.getElementById('clearDrawBtn');
-const modeClassicBtn = document.getElementById('modeClassic');
-const modeControlsBtn = document.getElementById('modeControls');
 
 const tuneBtn = document.getElementById('tuneBtn');
 const tunePopover = document.getElementById('tunePopover');
@@ -65,13 +62,13 @@ const state = {
   steepness: 1.0,
   smoothness: 1,
   launchRamp: true,
-  mode: 'classic', // 'classic' | 'controls'
-  tool: 'pan', // 'pan' | 'pencil' | 'boost' | 'scenery' | 'eraser' | 'spawn'
+  tool: 'pan', // 'pan' | 'ramp' | 'pencil' | 'eraser'
 
   // Built track + user-drawn strokes (each stroke is an array of segments)
   track: null,
-  customSpawn: null,
-  userStrokes: [], // Array<{ type: 'ink'|'boost'|'scenery', segments: Array<{ax,ay,bx,by,type}> }>
+  draggingRamp: false,
+  rampDragOffset: { x: 0, y: 0 },
+  userStrokes: [], // Array<{ type: 'ink', segments: Array<{ax,ay,bx,by,type}> }>
   activeStroke: null,
 
   // Playback
@@ -81,9 +78,8 @@ const state = {
   cam: { x: 0, y: 0, zoom: 1.0, targetZoom: 1.0 },
   followRider: true,
 
-  // Pointer & input
+  // Pointer
   pointer: { down: false, lastScreenX: 0, lastScreenY: 0, worldX: 0, worldY: 0 },
-  input: { left: false, right: false, down: false, jump: false, boost: false },
 };
 
 const grid = new SpatialGrid();
@@ -109,8 +105,37 @@ function rebuildGrid() {
 }
 
 function getSpawnPoint() {
-  if (state.customSpawn) return state.customSpawn;
   return state.track ? state.track.spawn : { x: 0, y: -40 };
+}
+
+function moveLaunchRamp(anchorX, anchorY) {
+  if (!state.track) return;
+  if (!state.launchRamp) {
+    state.launchRamp = true;
+    rampToggle.checked = true;
+  }
+  const ramp = buildLaunchRamp(anchorX, anchorY);
+  state.track.rampSegments = ramp.rampSegments;
+  state.track.spawn = ramp.spawn;
+  state.track.rampAnchor = ramp.anchor;
+  state.track.rampHandle = ramp.handle;
+  rebuildGrid();
+  resetRider(false);
+}
+
+function isNearRamp(wx, wy) {
+  if (!state.track || !state.launchRamp || !state.track.rampHandle) return false;
+  const hitRadius = 32 / state.cam.zoom;
+  const h = state.track.rampHandle;
+  if (Math.hypot(wx - h.x, wy - h.y) <= hitRadius) return true;
+  // Also allow grabbing directly on any ramp segment
+  const segHit = 16 / state.cam.zoom;
+  for (const s of state.track.rampSegments) {
+    const mx = (s.ax + s.bx) * 0.5;
+    const my = (s.ay + s.by) * 0.5;
+    if (Math.hypot(wx - mx, wy - my) <= segHit) return true;
+  }
+  return false;
 }
 
 function resetRider(centerCamera = true) {
@@ -130,15 +155,12 @@ function resetRider(centerCamera = true) {
   updateHud(true);
 }
 
-function rebuildTrack(preserveCustomSpawn = false) {
+function rebuildTrack() {
   state.track = buildStockTrack(state.rawPoints, {
     steepness: state.steepness,
     smoothness: state.smoothness,
     launchRamp: state.launchRamp,
   });
-  if (!preserveCustomSpawn) {
-    state.customSpawn = null;
-  }
   rebuildGrid();
   resetRider(true);
 }
@@ -462,16 +484,6 @@ clearDrawBtn.addEventListener('click', () => {
   }
 });
 
-function setMode(mode) {
-  state.mode = mode;
-  modeClassicBtn.classList.toggle('active', mode === 'classic');
-  modeControlsBtn.classList.toggle('active', mode === 'controls');
-  controlsHint.classList.toggle('hidden', mode !== 'controls');
-}
-
-modeClassicBtn.addEventListener('click', () => setMode('classic'));
-modeControlsBtn.addEventListener('click', () => setMode('controls'));
-
 tuneBtn.addEventListener('click', () => {
   tunePopover.classList.toggle('hidden');
 });
@@ -586,7 +598,34 @@ canvas.addEventListener('pointerdown', (e) => {
   state.pointer.worldY = w.y;
 
   // Middle click always pans
-  if (e.button === 1 || state.tool === 'pan') {
+  if (e.button === 1) {
+    state.followRider = false;
+    canvas.classList.add('cursor-grabbing');
+    return;
+  }
+
+  // Move Ramp tool OR grabbing the blue ramp directly while paused in Pan mode
+  if (
+    state.tool === 'ramp' ||
+    (state.tool === 'pan' && !state.playing && isNearRamp(w.x, w.y))
+  ) {
+    state.draggingRamp = true;
+    state.followRider = false;
+    canvas.classList.add('cursor-grabbing');
+    if (state.tool === 'ramp') {
+      // Tap/drag anywhere places the ramp exit right at the cursor
+      state.rampDragOffset = { x: 0, y: 0 };
+      moveLaunchRamp(w.x, w.y);
+    } else {
+      state.rampDragOffset = {
+        x: state.track.rampAnchor.x - w.x,
+        y: state.track.rampAnchor.y - w.y,
+      };
+    }
+    return;
+  }
+
+  if (state.tool === 'pan') {
     state.followRider = false;
     canvas.classList.add('cursor-grabbing');
     return;
@@ -597,10 +636,9 @@ canvas.addEventListener('pointerdown', (e) => {
     return;
   }
 
-  // Drawing stroke: pencil -> 'ink', boost -> 'boost'
-  const lineType = state.tool === 'boost' ? 'boost' : 'ink';
+  // Drawing stroke: solid ink line
   state.activeStroke = {
-    type: lineType,
+    type: 'ink',
     lastX: w.x,
     lastY: w.y,
     segments: [],
@@ -633,6 +671,11 @@ canvas.addEventListener('pointermove', (e) => {
   state.pointer.worldY = w.y;
 
   if (!state.pointer.down) return;
+
+  if (state.draggingRamp) {
+    moveLaunchRamp(w.x + state.rampDragOffset.x, w.y + state.rampDragOffset.y);
+    return;
+  }
 
   if (state.tool === 'pan' || e.buttons === 4) {
     const dx = sx - state.pointer.lastScreenX;
@@ -677,6 +720,7 @@ function endPointer(e) {
   }
   if (activePointers.size === 0) {
     state.pointer.down = false;
+    state.draggingRamp = false;
     canvas.classList.remove('cursor-grabbing');
     if (state.activeStroke) {
       if (state.activeStroke.segments.length === 0) {
@@ -713,7 +757,7 @@ canvas.addEventListener(
   { passive: false }
 );
 
-// ---------- Keyboard Shortcuts & Controls ----------
+// ---------- Keyboard Shortcuts ----------
 window.addEventListener('keydown', (e) => {
   if (document.activeElement === searchInput) return;
 
@@ -724,34 +768,9 @@ window.addEventListener('keydown', (e) => {
   }
 
   switch (e.code) {
-    case 'ArrowLeft':
-    case 'KeyA':
-      state.input.left = true;
-      break;
-    case 'ArrowRight':
-    case 'KeyD':
-      state.input.right = true;
-      break;
-    case 'ArrowDown':
-    case 'KeyS':
-      state.input.down = true;
-      break;
-    case 'ArrowUp':
-      state.input.jump = true;
-      if (state.mode === 'controls') e.preventDefault();
-      break;
     case 'Space':
       e.preventDefault();
-      if (state.mode === 'controls' && state.playing) {
-        state.input.jump = true;
-      } else {
-        togglePlay();
-      }
-      break;
-    case 'ShiftLeft':
-    case 'ShiftRight':
-    case 'KeyW':
-      state.input.boost = true;
+      togglePlay();
       break;
     case 'KeyP':
       togglePlay();
@@ -763,39 +782,13 @@ window.addEventListener('keydown', (e) => {
       setTool('pan');
       break;
     case 'Digit2':
-      setTool('pencil');
+      setTool('ramp');
       break;
     case 'Digit3':
-      setTool('boost');
+      setTool('pencil');
       break;
     case 'Digit4':
       setTool('eraser');
-      break;
-  }
-});
-
-window.addEventListener('keyup', (e) => {
-  switch (e.code) {
-    case 'ArrowLeft':
-    case 'KeyA':
-      state.input.left = false;
-      break;
-    case 'ArrowRight':
-    case 'KeyD':
-      state.input.right = false;
-      break;
-    case 'ArrowDown':
-    case 'KeyS':
-      state.input.down = false;
-      break;
-    case 'ArrowUp':
-    case 'Space':
-      state.input.jump = false;
-      break;
-    case 'ShiftLeft':
-    case 'ShiftRight':
-    case 'KeyW':
-      state.input.boost = false;
       break;
   }
 });
@@ -848,7 +841,7 @@ function updateHud(force = false) {
     hudStatus.textContent = 'STOPPED';
     hudStatus.classList.add('status-ready');
   } else {
-    hudStatus.textContent = sim.boosting ? 'BOOSTING' : 'RIDING';
+    hudStatus.textContent = 'RIDING';
     hudStatus.classList.add('status-riding');
   }
 }
@@ -963,8 +956,9 @@ function drawStockTrack() {
     ctx.fillText(formatDate(pt.t, state.range), pt.x, pt.y + 38);
   }
 
-  // 3. Launch Ramp (if enabled)
+  // 3. Launch Ramp (if enabled, draggable!)
   if (track.rampSegments.length > 0) {
+    const anchorY = track.rampAnchor ? track.rampAnchor.y : first.y;
     // Support struts
     ctx.strokeStyle = 'rgba(37, 99, 235, 0.22)';
     ctx.lineWidth = 2;
@@ -972,7 +966,7 @@ function drawStockTrack() {
       const s = track.rampSegments[i];
       ctx.beginPath();
       ctx.moveTo(s.ax, s.ay);
-      ctx.lineTo(s.ax, first.y + 30);
+      ctx.lineTo(s.ax, anchorY + 24);
       ctx.stroke();
     }
 
@@ -985,6 +979,26 @@ function drawStockTrack() {
       ctx.lineTo(s.bx, s.by);
     }
     ctx.stroke();
+
+    // Drag handle badge when paused so it's obvious the on-ramp is movable
+    if (!state.playing && track.rampHandle) {
+      const h = track.rampHandle;
+      ctx.save();
+      ctx.fillStyle = state.draggingRamp ? '#1d4ed8' : '#2563eb';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(h.x, h.y, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 13px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('✥', h.x, h.y + 0.5);
+      ctx.restore();
+    }
   }
 
   // 4. Stock line segments — crisp ink base + green/red directional top edge
@@ -1233,7 +1247,7 @@ function drawToolCursor() {
 // ---------- Main Loop ----------
 function tick() {
   if (state.playing && state.track) {
-    sim.step(grid, state.mode, state.input, state.track.bounds.maxX);
+    sim.step(grid, 'classic', {}, state.track.bounds.maxX);
 
     if (state.followRider) {
       const center = sim.getCenter();
