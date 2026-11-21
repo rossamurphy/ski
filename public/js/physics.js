@@ -456,9 +456,14 @@ export class RiderSimulation {
             this.bail();
           }
 
-          // Friction (very low for smooth icy ski glide)
+          // Friction (low for smooth ski glide, but settles cleanly when nearly stopped)
           const vt = vx * seg.tx + vy * seg.ty;
-          const friction = pt.isRider && !this.mounted ? 0.06 : 0.0025;
+          const isNearlyStopped = Math.abs(vt) < 0.06;
+          const friction = isNearlyStopped
+            ? 0.25
+            : pt.isRider && !this.mounted
+              ? 0.08
+              : 0.0025;
           pt.ox = pt.x - (vt * (1 - friction)) * seg.tx;
           pt.oy = pt.y - (vt * (1 - friction)) * seg.ty;
 

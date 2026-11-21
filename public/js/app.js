@@ -44,6 +44,9 @@ const smoothSlider = document.getElementById('smoothSlider');
 const smoothVal = document.getElementById('smoothVal');
 const rampToggle = document.getElementById('rampToggle');
 const fitViewBtn = document.getElementById('fitViewBtn');
+const zoomInBtn = document.getElementById('zoomInBtn');
+const zoomOutBtn = document.getElementById('zoomOutBtn');
+const zoomFitQuickBtn = document.getElementById('zoomFitQuickBtn');
 
 // ---------- App State ----------
 const state = {
@@ -122,7 +125,8 @@ function resetRider(centerCamera = true) {
     state.cam.zoom = 1.0;
     state.cam.targetZoom = 1.0;
   }
-  updateHud();
+  lastHudX = null;
+  updateHud(true);
 }
 
 function rebuildTrack(preserveCustomSpawn = false) {
@@ -500,6 +504,16 @@ fitViewBtn.addEventListener('click', () => {
   tunePopover.classList.add('hidden');
 });
 
+function zoomBy(factor) {
+  const nextZoom = Math.max(0.12, Math.min(2.6, state.cam.zoom * factor));
+  state.cam.zoom = nextZoom;
+  state.cam.targetZoom = nextZoom;
+}
+
+zoomInBtn.addEventListener('click', () => zoomBy(1.25));
+zoomOutBtn.addEventListener('click', () => zoomBy(1 / 1.25));
+zoomFitQuickBtn.addEventListener('click', fitWholeChart);
+
 // ---------- Coordinate Conversions ----------
 function screenToWorld(sx, sy) {
   const rect = canvas.getBoundingClientRect();
@@ -546,13 +560,29 @@ function eraseAt(wx, wy) {
   if (removed) rebuildGrid();
 }
 
+// Multi-touch pinch-to-zoom tracking
+const activePointers = new Map();
+let pinchLastDist = null;
+
 canvas.addEventListener('pointerdown', (e) => {
   if (e.button !== 0 && e.button !== 1) return;
+  e.preventDefault();
   canvas.setPointerCapture(e.pointerId);
 
   const rect = canvas.getBoundingClientRect();
   const sx = e.clientX - rect.left;
   const sy = e.clientY - rect.top;
+  activePointers.set(e.pointerId, { sx, sy });
+
+  // Two-finger pinch-to-zoom on touch devices
+  if (activePointers.size === 2) {
+    state.activeStroke = null;
+    const pts = [...activePointers.values()];
+    pinchLastDist = Math.hypot(pts[1].sx - pts[0].sx, pts[1].sy - pts[0].sy);
+    state.followRider = false;
+    return;
+  }
+
   const w = screenToWorld(sx, sy);
 
   state.pointer.down = true;
@@ -568,21 +598,13 @@ canvas.addEventListener('pointerdown', (e) => {
     return;
   }
 
-  if (state.tool === 'spawn') {
-    state.customSpawn = { x: w.x, y: w.y - 12 };
-    resetRider(false);
-    showToast('Moved start flag! Hit Play to drop in.', 1700);
-    return;
-  }
-
   if (state.tool === 'eraser') {
     eraseAt(w.x, w.y);
     return;
   }
 
-  // Drawing stroke: pencil -> 'ink', boost -> 'boost', scenery -> 'scenery'
-  const lineType =
-    state.tool === 'boost' ? 'boost' : state.tool === 'scenery' ? 'scenery' : 'ink';
+  // Drawing stroke: pencil -> 'ink', boost -> 'boost'
+  const lineType = state.tool === 'boost' ? 'boost' : 'ink';
   state.activeStroke = {
     type: lineType,
     lastX: w.x,
@@ -596,6 +618,22 @@ canvas.addEventListener('pointermove', (e) => {
   const rect = canvas.getBoundingClientRect();
   const sx = e.clientX - rect.left;
   const sy = e.clientY - rect.top;
+
+  if (activePointers.has(e.pointerId)) {
+    activePointers.set(e.pointerId, { sx, sy });
+  }
+
+  if (activePointers.size === 2) {
+    const pts = [...activePointers.values()];
+    const dist = Math.hypot(pts[1].sx - pts[0].sx, pts[1].sy - pts[0].sy);
+    if (pinchLastDist && dist > 10) {
+      const factor = dist / pinchLastDist;
+      zoomBy(factor);
+    }
+    pinchLastDist = dist;
+    return;
+  }
+
   const w = screenToWorld(sx, sy);
   state.pointer.worldX = w.x;
   state.pointer.worldY = w.y;
@@ -636,14 +674,22 @@ canvas.addEventListener('pointermove', (e) => {
   }
 });
 
-function endPointer() {
-  state.pointer.down = false;
-  canvas.classList.remove('cursor-grabbing');
-  if (state.activeStroke) {
-    if (state.activeStroke.segments.length === 0) {
-      state.userStrokes.pop();
+function endPointer(e) {
+  if (e && activePointers.has(e.pointerId)) {
+    activePointers.delete(e.pointerId);
+  }
+  if (activePointers.size < 2) {
+    pinchLastDist = null;
+  }
+  if (activePointers.size === 0) {
+    state.pointer.down = false;
+    canvas.classList.remove('cursor-grabbing');
+    if (state.activeStroke) {
+      if (state.activeStroke.segments.length === 0) {
+        state.userStrokes.pop();
+      }
+      state.activeStroke = null;
     }
-    state.activeStroke = null;
   }
 }
 
@@ -729,13 +775,7 @@ window.addEventListener('keydown', (e) => {
       setTool('boost');
       break;
     case 'Digit4':
-      setTool('scenery');
-      break;
-    case 'Digit5':
       setTool('eraser');
-      break;
-    case 'Digit6':
-      setTool('spawn');
       break;
   }
 });
@@ -767,22 +807,36 @@ window.addEventListener('keyup', (e) => {
 });
 
 // ---------- HUD Update ----------
-function updateHud() {
+let lastHudUpdateTs = 0;
+let lastHudX = null;
+
+function updateHud(force = false) {
   if (!state.track) return;
+  const now = performance.now();
+  // Throttle to ~12 Hz so numbers stay readable and never flicker wildly
+  if (!force && now - lastHudUpdateTs < 80) return;
+  lastHudUpdateTs = now;
+
   const center = sim.getCenter();
-  const sample = state.track.getSampleAtX(center.x);
-  if (sample) {
-    hudPrice.textContent = formatPrice(sample.price, state.currency);
-    const pct = sample.pctChange;
-    const sign = pct >= 0 ? '+' : '';
-    hudPct.textContent = `${sign}${pct.toFixed(1)}%`;
-    hudPct.className = `hud-pct ${pct >= 0 ? 'up' : 'down'}`;
-    hudDate.textContent = sample.onRamp
-      ? `Launch Ramp → ${formatDate(sample.t, state.range)}`
-      : formatDate(sample.t, state.range);
+  const kmh = sim.speed < 0.28 ? 0 : Math.round(sim.speed * 7.5);
+  const isStopped = state.playing && sim.time > 0.6 && kmh === 0;
+
+  // Only update displayed price/date if forced or rider moved meaningfully (> 2px)
+  if (force || lastHudX === null || Math.abs(center.x - lastHudX) > 2.0) {
+    lastHudX = center.x;
+    const sample = state.track.getSampleAtX(center.x);
+    if (sample) {
+      hudPrice.textContent = formatPrice(sample.price, state.currency);
+      const pct = sample.pctChange;
+      const sign = pct >= 0 ? '+' : '';
+      hudPct.textContent = `${sign}${pct.toFixed(1)}%`;
+      hudPct.className = `hud-pct ${pct >= 0 ? 'up' : 'down'}`;
+      hudDate.textContent = sample.onRamp
+        ? `Launch Ramp → ${formatDate(sample.t, state.range)}`
+        : formatDate(sample.t, state.range);
+    }
   }
 
-  const kmh = Math.round(sim.speed * 7.5);
   hudSpeed.textContent = `${kmh} km/h`;
   hudAir.textContent = `Air ${sim.airTime.toFixed(1)}s`;
 
@@ -794,8 +848,11 @@ function updateHud() {
     hudStatus.textContent = 'FINISHED!';
     hudStatus.classList.add('status-finished');
   } else if (!sim.mounted) {
-    hudStatus.textContent = 'BAILED!';
+    hudStatus.textContent = isStopped ? 'BAILED' : 'BAILED!';
     hudStatus.classList.add('status-bailed');
+  } else if (isStopped) {
+    hudStatus.textContent = 'STOPPED';
+    hudStatus.classList.add('status-ready');
   } else {
     hudStatus.textContent = sim.boosting ? 'BOOSTING' : 'RIDING';
     hudStatus.classList.add('status-riding');
@@ -960,33 +1017,25 @@ function drawStockTrack() {
     ctx.stroke();
   }
 
-  // 5. Start & Finish flags
-  const sp = getSpawnPoint();
-  drawFlag(sp.x - 16, sp.y + 12, '#059669', 'START');
-  drawFlag(last.x, last.y, '#18181b', 'FINISH');
+  // 5. Subtle finish line at the end of the chart
+  drawFinishLine(last.x, last.y);
 }
 
-function drawFlag(x, y, color, label) {
+function drawFinishLine(x, y) {
   ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2.2;
+  ctx.strokeStyle = 'rgba(24, 24, 27, 0.35)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([5, 5]);
   ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.lineTo(x, y - 42);
+  ctx.moveTo(x, y + 10);
+  ctx.lineTo(x, y - 56);
   ctx.stroke();
+  ctx.setLineDash([]);
 
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.moveTo(x, y - 42);
-  ctx.lineTo(x + 28, y - 34);
-  ctx.lineTo(x, y - 26);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.font = '800 9px Inter, sans-serif';
-  ctx.fillStyle = color;
-  ctx.textAlign = 'left';
-  ctx.fillText(label, x + 5, y - 46);
+  ctx.font = '800 10px ui-monospace, SFMono-Regular, Menlo, monospace';
+  ctx.fillStyle = '#52525b';
+  ctx.textAlign = 'center';
+  ctx.fillText('END', x, y - 62);
   ctx.restore();
 }
 

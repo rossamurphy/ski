@@ -65,6 +65,13 @@
         <div id="hudNote" class="hud-note hidden"></div>
       </div>
 
+      <!-- Zoom Controls (great for iPad / touch) -->
+      <div class="zoom-controls" aria-label="Zoom controls">
+        <button id="zoomInBtn" title="Zoom in">+</button>
+        <button id="zoomOutBtn" title="Zoom out">−</button>
+        <button id="zoomFitQuickBtn" title="Fit whole chart">⊡</button>
+      </div>
+
       <!-- Toast / Error Banner -->
       <div id="toast" class="toast hidden"></div>
 
@@ -106,23 +113,17 @@
         <div class="divider"></div>
 
         <div class="tool-group" id="drawTools">
-          <button data-tool="pan" class="active" title="Pan camera (drag) or scroll to zoom (1)">
+          <button data-tool="pan" class="active" title="Pan camera (drag) or pinch/scroll to zoom (1)">
             ✋ Pan
           </button>
           <button data-tool="pencil" title="Draw solid ink track on chart (2)">
-            ✏️ Ink
+            ✏️ Draw
           </button>
           <button data-tool="boost" title="Draw red boost/accelerator track (3)">
             ⚡ Boost
           </button>
-          <button data-tool="scenery" title="Draw non-colliding scenery line (4)">
-            🌿 Scenery
-          </button>
-          <button data-tool="eraser" title="Erase your drawn lines (5)">
+          <button data-tool="eraser" title="Erase your drawn lines (4)">
             🧹 Erase
-          </button>
-          <button data-tool="spawn" title="Click anywhere on chart to move start flag (6)">
-            🚩 Drop Flag
           </button>
         </div>
 
