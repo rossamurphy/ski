@@ -1,0 +1,11 @@
+{
+  "name": "stock-ski-rider",
+  "version": "1.0.0",
+  "description": "Line Rider on real stock price charts",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "deploy": "npx --yes wrangler pages deploy public --project-name stock-ski"
+  }
+}

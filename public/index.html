@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock Ski Rider — Line Rider on Real Stock Charts</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <!-- Top Navigation & Market Bar -->
+    <header class="topbar">
+      <div class="brand" title="Line Rider on Stock Charts">
+        <span class="brand-icon">⛷</span>
+        <span class="brand-name">STOCK<span>SKI</span></span>
+      </div>
+
+      <div class="search-wrap">
+        <input
+          id="searchInput"
+          type="text"
+          placeholder="Search ticker or company (NVDA, GME, BTC, anthropic)..."
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <span id="searchSpinner" class="spinner hidden"></span>
+        <div id="searchDropdown" class="search-dropdown hidden"></div>
+      </div>
+
+      <div id="presetsBar" class="presets-bar" aria-label="Preset charts"></div>
+
+      <div id="timeframeBar" class="timeframe-bar" aria-label="Timeframe">
+        <button data-range="1d">1D</button>
+        <button data-range="5d">5D</button>
+        <button data-range="1mo">1M</button>
+        <button data-range="6mo">6M</button>
+        <button data-range="1y" class="active">1Y</button>
+        <button data-range="5y">5Y</button>
+        <button data-range="max">MAX</button>
+      </div>
+    </header>
+
+    <!-- Main Full-Bleed Canvas Stage -->
+    <main class="stage">
+      <canvas id="gameCanvas"></canvas>
+
+      <!-- Live Stock Telemetry HUD -->
+      <div class="hud-card" id="hudCard">
+        <div class="hud-header">
+          <span id="hudSymbol" class="hud-symbol">GME</span>
+          <span id="hudBadge" class="hud-badge">PRESET</span>
+        </div>
+        <div id="hudName" class="hud-name">GameStop Short Squeeze (2021)</div>
+        <div class="hud-price-row">
+          <span id="hudPrice" class="hud-price">$17.25</span>
+          <span id="hudPct" class="hud-pct up">+0.0%</span>
+        </div>
+        <div id="hudDate" class="hud-date">Jan 4, 2021</div>
+        <div class="hud-stats">
+          <span id="hudSpeed">0 km/h</span>
+          <span class="dot">·</span>
+          <span id="hudAir">Air 0.0s</span>
+          <span class="dot">·</span>
+          <span id="hudStatus" class="status-ready">READY</span>
+        </div>
+        <div id="hudNote" class="hud-note hidden"></div>
+      </div>
+
+      <!-- Toast / Error Banner -->
+      <div id="toast" class="toast hidden"></div>
+
+      <!-- Controls Hint Pill (visible in Controls mode) -->
+      <div id="controlsHint" class="controls-hint hidden">
+        <span><kbd>←</kbd><kbd>→</kbd> Lean / Pump</span>
+        <span><kbd>↑</kbd> / <kbd>Space</kbd> Jump</span>
+        <span><kbd>↓</kbd> Tuck</span>
+        <span><kbd>Shift</kbd> / <kbd>W</kbd> Boost</span>
+      </div>
+
+      <!-- Track Tuning Popover -->
+      <div id="tunePopover" class="tune-popover hidden">
+        <div class="tune-title">Track Physics &amp; Shape</div>
+        <label class="tune-row">
+          <span>Steepness <strong id="steepVal">1.0×</strong></span>
+          <input id="steepSlider" type="range" min="0.35" max="2.4" step="0.05" value="1.0" />
+        </label>
+        <label class="tune-row">
+          <span>Smoothness <strong id="smoothVal">1</strong></span>
+          <input id="smoothSlider" type="range" min="0" max="5" step="1" value="1" />
+        </label>
+        <label class="tune-check">
+          <input id="rampToggle" type="checkbox" checked />
+          <span>Starting Launch Ramp</span>
+        </label>
+        <button id="fitViewBtn" class="tune-btn">Zoom to Fit Whole Chart</button>
+      </div>
+
+      <!-- Bottom Floating Line-Rider Toolbar -->
+      <div class="toolbar">
+        <div class="tool-group">
+          <button id="playBtn" class="btn-primary" title="Play / Pause (P)">
+            <span id="playIcon">▶</span> <span id="playLabel">Play</span>
+          </button>
+          <button id="resetBtn" title="Reset rider to start (R)">↺ Reset</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="tool-group" id="drawTools">
+          <button data-tool="pan" class="active" title="Pan camera (drag) or scroll to zoom (1)">
+            ✋ Pan
+          </button>
+          <button data-tool="pencil" title="Draw solid ink track on chart (2)">
+            ✏️ Ink
+          </button>
+          <button data-tool="boost" title="Draw red boost/accelerator track (3)">
+            ⚡ Boost
+          </button>
+          <button data-tool="scenery" title="Draw non-colliding scenery line (4)">
+            🌿 Scenery
+          </button>
+          <button data-tool="eraser" title="Erase your drawn lines (5)">
+            🧹 Erase
+          </button>
+          <button data-tool="spawn" title="Click anywhere on chart to move start flag (6)">
+            🚩 Drop Flag
+          </button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="tool-group">
+          <button id="undoBtn" title="Undo last drawn stroke (Ctrl+Z)">↶</button>
+          <button id="clearDrawBtn" title="Clear all user-drawn lines">Clear</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="mode-toggle" title="Switch between classic passive Line Rider and light keyboard controls">
+          <button id="modeClassic" class="active">Classic</button>
+          <button id="modeControls">Controls</button>
+        </div>
+
+        <button id="tuneBtn" title="Adjust chart steepness, smoothness &amp; launch ramp">
+          ⚙ Tune
+        </button>
+      </div>
+    </main>
+
+    <script type="module" src="/js/app.js"></script>
+  </body>
+</html>
