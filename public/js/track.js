@@ -61,6 +61,7 @@ export function buildStockTrack(rawPoints, options = {}) {
     smoothness = 2, // 0 to 20 passes
     tiltDeg = 0, // -40 to +40 degrees (+ tilts right side downhill)
     launchRamp = true,
+    anchorAtInitialPeak = false,
     targetWidth = 4600,
     baseHeight = 620,
   } = options;
@@ -140,10 +141,17 @@ export function buildStockTrack(rawPoints, options = {}) {
     });
   }
 
-  // Anchor launch ramp at the beginning (top-left above the start of the stock price line)
-  const firstPt = worldPoints[0];
-  const rampExitX = firstPt.x + 6;
-  const rampExitY = firstPt.y - 6;
+  // Anchor launch ramp: for ANT, start right above the initial spike; otherwise top-left above day 1
+  let anchorIdx = 0;
+  if (anchorAtInitialPeak && worldPoints.length > 2) {
+    const searchEnd = Math.max(2, Math.floor(worldPoints.length * 0.4));
+    for (let i = 1; i < searchEnd; i++) {
+      if (worldPoints[i].y < worldPoints[anchorIdx].y) anchorIdx = i;
+    }
+  }
+  const anchorPt = worldPoints[anchorIdx];
+  const rampExitX = anchorPt.x + (anchorAtInitialPeak ? 10 : 6);
+  const rampExitY = anchorPt.y - 6;
 
   let rampSegments = [];
   let rampAnchor = { x: rampExitX, y: rampExitY };

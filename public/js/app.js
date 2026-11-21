@@ -76,7 +76,8 @@ const state = {
   playing: false,
 
   // Camera (world coordinate at screen center + zoom)
-  cam: { x: 0, y: 0, zoom: 1.0, targetZoom: 1.0 },
+  cam: { x: 0, y: 0, zoom: 0.52, targetZoom: 0.52 },
+  playZoomTarget: null,
   followRider: true,
 
   // Pointer
@@ -139,16 +140,18 @@ function isNearRamp(wx, wy) {
 
 function resetRider(centerCamera = true) {
   state.playing = false;
+  state.playZoomTarget = null;
   updatePlayButton();
   const sp = getSpawnPoint();
   // Classic Line Rider starts gently and builds speed from gravity
   sim.reset(sp.x, sp.y, 0.18);
   if (centerCamera) {
     state.followRider = true;
-    state.cam.x = sp.x + 120;
-    state.cam.y = sp.y + 30;
-    state.cam.zoom = 1.0;
-    state.cam.targetZoom = 1.0;
+    // Start zoomed out so the user can see much more of the chart before hitting Play
+    state.cam.zoom = 0.52;
+    state.cam.targetZoom = 0.52;
+    state.cam.x = sp.x + 480;
+    state.cam.y = sp.y + 110;
   }
   lastHudX = null;
   updateHud(true);
@@ -163,6 +166,7 @@ function rebuildTrack(resetCamera = true) {
     smoothness: state.smoothness,
     tiltDeg: state.tiltDeg,
     launchRamp: state.launchRamp,
+    anchorAtInitialPeak: state.symbol === 'ANT',
   });
   // Preserve user-positioned ramp when smoothing or tilting
   if (!resetCamera && state.customRampAnchor && state.launchRamp) {
@@ -471,12 +475,23 @@ function togglePlay() {
   state.playing = !state.playing;
   if (state.playing) {
     state.followRider = true;
+    // Smoothly zoom in from overview when starting a run
+    if (sim.time === 0 && state.cam.zoom < 0.85) {
+      state.playZoomTarget = 0.92;
+    }
+  } else {
+    state.playZoomTarget = null;
   }
   updatePlayButton();
 }
 
+function handleReset() {
+  setTool('pan');
+  resetRider(true);
+}
+
 playBtn.addEventListener('click', togglePlay);
-resetBtn.addEventListener('click', () => resetRider(true));
+resetBtn.addEventListener('click', handleReset);
 
 function setTool(tool) {
   state.tool = tool;
@@ -527,6 +542,7 @@ tiltSlider.addEventListener('input', () => {
 });
 
 function zoomBy(factor) {
+  state.playZoomTarget = null;
   const nextZoom = Math.max(0.12, Math.min(2.6, state.cam.zoom * factor));
   state.cam.zoom = nextZoom;
   state.cam.targetZoom = nextZoom;
@@ -780,6 +796,7 @@ canvas.addEventListener(
     const before = screenToWorld(sx, sy);
 
     // Proportional exponential zoom (smooth on trackpads & mouse wheels, no inertia spikes)
+    state.playZoomTarget = null;
     const clamped = Math.max(-120, Math.min(120, dy));
     const sensitivity = e.ctrlKey ? 0.006 : 0.0022;
     const factor = Math.exp(-clamped * sensitivity);
@@ -815,7 +832,7 @@ window.addEventListener('keydown', (e) => {
       togglePlay();
       break;
     case 'KeyR':
-      resetRider(true);
+      handleReset();
       break;
     case 'Digit1':
       setTool('pan');
@@ -1296,6 +1313,17 @@ function tick() {
       const targetY = center.y + vel.vy * 18;
       state.cam.x += (targetX - state.cam.x) * 0.1;
       state.cam.y += (targetY - state.cam.y) * 0.1;
+
+      // One-shot smooth zoom-in when Play starts from the zoomed-out overview
+      if (state.playZoomTarget !== null) {
+        const diff = state.playZoomTarget - state.cam.zoom;
+        if (Math.abs(diff) < 0.005) {
+          state.cam.zoom = state.playZoomTarget;
+          state.playZoomTarget = null;
+        } else {
+          state.cam.zoom += diff * 0.06;
+        }
+      }
     }
     updateHud();
   }
