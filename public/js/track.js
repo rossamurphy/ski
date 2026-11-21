@@ -131,19 +131,23 @@ export function buildStockTrack(rawPoints, options = {}) {
     });
   }
 
-  // Anchor launch ramp at the highest peak (max price = smallest y) on the chart
-  let peakPoint = worldPoints[0];
-  for (const pt of worldPoints) {
-    if (pt.y < peakPoint.y) peakPoint = pt;
+  // Anchor launch ramp cleanly over the highest peak (max price = smallest y)
+  // Slightly past & above the peak vertex so the sled clears the uphill side cleanly
+  let peakIdx = 0;
+  for (let i = 1; i < worldPoints.length; i++) {
+    if (worldPoints[i].y < worldPoints[peakIdx].y) peakIdx = i;
   }
+  const peakPoint = worldPoints[peakIdx];
+  const rampExitX = peakIdx < worldPoints.length - 1 ? peakPoint.x + 10 : peakPoint.x;
+  const rampExitY = peakPoint.y - 6;
 
   let rampSegments = [];
-  let rampAnchor = { x: peakPoint.x, y: peakPoint.y };
+  let rampAnchor = { x: rampExitX, y: rampExitY };
   let rampHandle = null;
-  let spawn = { x: peakPoint.x + 12, y: peakPoint.y - 36 };
+  let spawn = { x: rampExitX + 12, y: rampExitY - 36 };
 
   if (launchRamp) {
-    const ramp = buildLaunchRamp(peakPoint.x, peakPoint.y);
+    const ramp = buildLaunchRamp(rampExitX, rampExitY);
     rampSegments = ramp.rampSegments;
     spawn = ramp.spawn;
     rampHandle = ramp.handle;

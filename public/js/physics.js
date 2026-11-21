@@ -436,7 +436,7 @@ export class RiderSimulation {
     const px = pt.x - seg.ax;
     const py = pt.y - seg.ay;
     const proj = px * seg.tx + py * seg.ty;
-    if (proj < -pt.radius || proj > seg.len + pt.radius) return;
+    if (proj < -1.0 || proj > seg.len + 1.0) return;
 
     const clamped = Math.max(0, Math.min(seg.len, proj));
     const closestX = seg.ax + seg.tx * clamped;
@@ -446,10 +446,12 @@ export class RiderSimulation {
     const ry = pt.y - closestY;
 
     if (seg.type === 'stock' || seg.type === 'ramp') {
-      // One-sided top surface collision with deep anti-tunneling catch band
+      // One-sided top surface collision with anti-tunneling catch band
       const signedDist = rx * seg.nx + ry * seg.ny;
-      const CATCH_DEPTH = -22;
-      if (signedDist < pt.radius && signedDist > CATCH_DEPTH) {
+      const prevSignedDist = (pt.ox - closestX) * seg.nx + (pt.oy - closestY) * seg.ny;
+      const CATCH_DEPTH = -14;
+      // Only catch if the particle was above/near the surface (prevents snagging from underneath a ramp)
+      if (signedDist < pt.radius && signedDist > CATCH_DEPTH && prevSignedDist > CATCH_DEPTH * 0.5) {
         const vx = pt.x - pt.ox;
         const vy = pt.y - pt.oy;
         const vn = vx * seg.nx + vy * seg.ny;
