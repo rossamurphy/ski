@@ -28,37 +28,6 @@ const RANGE_INTERVAL_MAP = {
   'max': '1mo',
 };
 
-const PRIVATE_COMPANIES = [
-  {
-    symbol: 'PRIVATE:ANTHROPIC',
-    name: 'Anthropic (Private — Valuation Stairs)',
-    exchange: 'PRIVATE',
-    quoteType: 'PRIVATE',
-    keywords: ['anthropic', 'claude'],
-  },
-  {
-    symbol: 'PRIVATE:OPENAI',
-    name: 'OpenAI (Private — Valuation Rocket)',
-    exchange: 'PRIVATE',
-    quoteType: 'PRIVATE',
-    keywords: ['openai', 'chatgpt'],
-  },
-  {
-    symbol: 'PRIVATE:SPACEX',
-    name: 'SpaceX (Private — Launch Trajectory)',
-    exchange: 'PRIVATE',
-    quoteType: 'PRIVATE',
-    keywords: ['spacex', 'starlink'],
-  },
-  {
-    symbol: 'PRIVATE:STRIPE',
-    name: 'Stripe (Private — Fintech Rollercoaster)',
-    exchange: 'PRIVATE',
-    quoteType: 'PRIVATE',
-    keywords: ['stripe'],
-  },
-];
-
 // Simple in-memory cache (5 min TTL)
 const cache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -118,17 +87,6 @@ async function handleSearch(query, res) {
   }
 
   const lower = q.toLowerCase();
-  const privateMatches = PRIVATE_COMPANIES.filter(
-    (c) =>
-      c.name.toLowerCase().includes(lower) ||
-      c.keywords.some((k) => k.includes(lower) || lower.includes(k))
-  ).map(({ symbol, name, exchange, quoteType }) => ({
-    symbol,
-    name,
-    exchange,
-    quoteType,
-  }));
-
   const cacheKey = `search:${lower}`;
   const cached = getCached(cacheKey);
   if (cached) {
@@ -157,9 +115,8 @@ async function handleSearch(query, res) {
     console.warn('[search] Yahoo lookup failed:', err.message);
   }
 
-  const combined = [...privateMatches, ...yahooResults];
-  setCached(cacheKey, combined);
-  return sendJson(res, 200, { results: combined });
+  setCached(cacheKey, yahooResults);
+  return sendJson(res, 200, { results: yahooResults });
 }
 
 async function handleChart(symbol, rangeParam, res) {

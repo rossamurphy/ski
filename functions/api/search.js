@@ -1,4 +1,4 @@
-import { PRIVATE_COMPANIES, fetchYahoo, jsonResponse } from './_yahoo.js';
+import { fetchYahoo, jsonResponse } from './_yahoo.js';
 
 export async function onRequestGet({ request }) {
   const url = new URL(request.url);
@@ -6,18 +6,6 @@ export async function onRequestGet({ request }) {
   if (!q) {
     return jsonResponse({ results: [] }, 200, 60);
   }
-
-  const lower = q.toLowerCase();
-  const privateMatches = PRIVATE_COMPANIES.filter(
-    (c) =>
-      c.name.toLowerCase().includes(lower) ||
-      c.keywords.some((k) => k.includes(lower) || lower.includes(k))
-  ).map(({ symbol, name, exchange, quoteType }) => ({
-    symbol,
-    name,
-    exchange,
-    quoteType,
-  }));
 
   let yahooResults = [];
   try {
@@ -37,8 +25,8 @@ export async function onRequestGet({ request }) {
         }));
     }
   } catch {
-    // Return private matches if Yahoo lookup fails
+    // Return empty list on network failure
   }
 
-  return jsonResponse({ results: [...privateMatches, ...yahooResults] }, 200, 300);
+  return jsonResponse({ results: yahooResults }, 200, 300);
 }

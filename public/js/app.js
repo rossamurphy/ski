@@ -371,15 +371,8 @@ searchInput.addEventListener('keydown', (e) => {
       selectSearchResult(searchResults[selectedResultIdx]);
     } else if (searchInput.value.trim()) {
       // Allow direct ticker entry even if autocomplete hasn't finished
-      const raw = searchInput.value.trim();
-      const lower = raw.toLowerCase();
-      if (lower.includes('anthropic')) {
-        selectSearchResult({ symbol: 'PRIVATE:ANTHROPIC', name: 'Anthropic' });
-      } else if (lower.includes('openai')) {
-        selectSearchResult({ symbol: 'PRIVATE:OPENAI', name: 'OpenAI' });
-      } else {
-        selectSearchResult({ symbol: raw.toUpperCase(), name: raw.toUpperCase() });
-      }
+      const raw = searchInput.value.trim().toUpperCase();
+      selectSearchResult({ symbol: raw, name: raw });
     }
   } else if (e.key === 'Escape') {
     searchDropdown.classList.add('hidden');

@@ -18,37 +18,6 @@ export const RANGE_INTERVAL_MAP = {
   max: '1mo',
 };
 
-export const PRIVATE_COMPANIES = [
-  {
-    symbol: 'PRIVATE:ANTHROPIC',
-    name: 'Anthropic (Private — Valuation Stairs)',
-    exchange: 'PRIVATE',
-    quoteType: 'PRIVATE',
-    keywords: ['anthropic', 'claude'],
-  },
-  {
-    symbol: 'PRIVATE:OPENAI',
-    name: 'OpenAI (Private — Valuation Rocket)',
-    exchange: 'PRIVATE',
-    quoteType: 'PRIVATE',
-    keywords: ['openai', 'chatgpt'],
-  },
-  {
-    symbol: 'PRIVATE:SPACEX',
-    name: 'SpaceX (Private — Launch Trajectory)',
-    exchange: 'PRIVATE',
-    quoteType: 'PRIVATE',
-    keywords: ['spacex', 'starlink'],
-  },
-  {
-    symbol: 'PRIVATE:STRIPE',
-    name: 'Stripe (Private — Fintech Rollercoaster)',
-    exchange: 'PRIVATE',
-    quoteType: 'PRIVATE',
-    keywords: ['stripe'],
-  },
-];
-
 export async function fetchYahoo(pathAndQuery) {
   let lastResp = null;
   let lastErr = null;

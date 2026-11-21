@@ -231,98 +231,14 @@ export const PRESETS = {
     ),
   },
 
-  'PRIVATE:ANTHROPIC': {
-    id: 'PRIVATE:ANTHROPIC',
-    label: 'Anthropic*',
-    symbol: 'ANTHROPIC (Private)',
-    name: 'Anthropic — Valuation Stairs ($B)',
-    currency: 'USD_B',
-    range: 'max',
-    isLive: false,
-    description:
-      'Private company easter egg! Valuation in $B across funding rounds — flat plateaus and sudden jumps. Draw ramps or hit Boost!',
-    points: makeStaircase(
-      [
-        ['2021-05-01', 0.5],
-        ['2022-04-01', 3.4],
-        ['2023-05-01', 4.1],
-        ['2023-10-01', 15.0],
-        ['2024-02-01', 18.4],
-        ['2025-03-01', 61.5],
-        ['2025-09-01', 183.0],
-        ['2026-02-01', 350.0],
-      ],
-      18
-    ),
-  },
-
-  'PRIVATE:OPENAI': {
-    id: 'PRIVATE:OPENAI',
-    label: 'OpenAI*',
-    symbol: 'OPENAI (Private)',
-    name: 'OpenAI — Valuation Rocket ($B)',
-    currency: 'USD_B',
-    range: 'max',
-    isLive: false,
-    description: 'Private company valuation steps in $B.',
-    points: makeStaircase(
-      [
-        ['2019-07-01', 3.0],
-        ['2021-01-01', 14.0],
-        ['2023-01-01', 29.0],
-        ['2024-02-01', 80.0],
-        ['2024-10-01', 157.0],
-        ['2025-03-01', 300.0],
-        ['2025-10-01', 500.0],
-      ],
-      20
-    ),
-  },
-
-  'PRIVATE:SPACEX': {
-    id: 'PRIVATE:SPACEX',
-    label: 'SpaceX*',
-    symbol: 'SPACEX (Private)',
-    name: 'SpaceX — Private Valuation ($B)',
-    currency: 'USD_B',
-    range: 'max',
-    isLive: false,
-    description: 'Private company valuation trajectory in $B.',
-    points: makeStaircase(
-      [
-        ['2018-04-01', 25.0],
-        ['2020-08-01', 46.0],
-        ['2021-10-01', 100.0],
-        ['2022-12-01', 137.0],
-        ['2023-12-01', 180.0],
-        ['2024-12-01', 350.0],
-        ['2025-12-01', 400.0],
-      ],
-      20
-    ),
-  },
-
-  'PRIVATE:STRIPE': {
-    id: 'PRIVATE:STRIPE',
-    label: 'Stripe*',
-    symbol: 'STRIPE (Private)',
-    name: 'Stripe — Valuation Rollercoaster ($B)',
-    currency: 'USD_B',
-    range: 'max',
-    isLive: false,
-    description: 'Private company valuation peak, 2023 haircut, and recovery ($B).',
-    points: makeStaircase(
-      [
-        ['2019-09-01', 35.0],
-        ['2020-04-01', 36.0],
-        ['2021-03-01', 95.0],
-        ['2022-07-01', 74.0],
-        ['2023-03-01', 50.0],
-        ['2024-02-01', 65.0],
-        ['2025-02-01', 91.5],
-      ],
-      20
-    ),
+  ANT: {
+    id: 'ANT',
+    label: 'ANT',
+    symbol: 'ANT',
+    name: 'Anthropic, PBC (Live)',
+    currency: 'USD',
+    range: '6mo',
+    isLive: true,
   },
 };
 
@@ -332,5 +248,5 @@ export const TOOLBAR_PRESET_IDS = [
   'DOTCOM',
   'BTC',
   'NVDA',
-  'PRIVATE:ANTHROPIC',
+  'ANT',
 ];
