@@ -109,6 +109,7 @@ export class RiderSimulation {
     this.sparks = [];
     this.mounted = true;
     this.bailedAt = 0;
+    this.upsideDownFrames = 0;
     this.time = 0;
     this.airTime = 0;
     this.bestAirTime = 0;
@@ -125,6 +126,7 @@ export class RiderSimulation {
   reset(spawnX, spawnY, initialVx = 2.2) {
     this.mounted = true;
     this.bailedAt = 0;
+    this.upsideDownFrames = 0;
     this.time = 0;
     this.airTime = 0;
     this.bestAirTime = 0;
@@ -223,7 +225,7 @@ export class RiderSimulation {
   step(grid, mode, input, trackMaxX) {
     const SUBSTEPS = 6;
     const dt = 1 / SUBSTEPS;
-    const GRAVITY = 0.24 * dt * dt;
+    const GRAVITY = 0.17 * dt * dt;
 
     this.time += 1 / 60;
     if (this.jumpCooldown > 0) this.jumpCooldown -= 1 / 60;
@@ -366,13 +368,20 @@ export class RiderSimulation {
       this.jumpCooldown = 0.28;
     }
 
-    // Check upside-down crash on sled
+    // Check upside-down crash on sled (require sustained inversion, not momentary spike bumps)
     if (this.mounted && anySledGrounded) {
-      const { tail, nose, backTop } = this.p;
-      const upY = backTop.y - tail.y; // normally negative (backTop is above tail)
-      if (upY > 4.2) {
-        this.bail();
+      const { tail, backTop } = this.p;
+      const upY = backTop.y - tail.y; // normally ~ -11 (backTop is above tail)
+      if (upY > 7.5) {
+        this.upsideDownFrames++;
+        if (this.upsideDownFrames >= 8) {
+          this.bail();
+        }
+      } else {
+        this.upsideDownFrames = Math.max(0, this.upsideDownFrames - 2);
       }
+    } else {
+      this.upsideDownFrames = 0;
     }
 
     // Update scarf Verlet chain
@@ -451,8 +460,8 @@ export class RiderSimulation {
           pt.x += seg.nx * push;
           pt.y += seg.ny * push;
 
-          // Head hitting the track causes a bail!
-          if (pt.isHead && this.mounted && -vn > 0.45) {
+          // Head hitting the track hard causes a bail (forgiving on light grazes)
+          if (pt.isHead && this.mounted && -vn > 1.35) {
             this.bail();
           }
 
@@ -496,7 +505,7 @@ export class RiderSimulation {
         const vy = pt.y - pt.oy;
         const vn = vx * nx + vy * ny;
 
-        if (pt.isHead && this.mounted && -vn > 0.55) {
+        if (pt.isHead && this.mounted && -vn > 1.45) {
           this.bail();
         }
 

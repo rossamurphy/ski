@@ -117,7 +117,8 @@ function resetRider(centerCamera = true) {
   state.playing = false;
   updatePlayButton();
   const sp = getSpawnPoint();
-  sim.reset(sp.x, sp.y, state.launchRamp && !state.customSpawn ? 2.4 : 1.6);
+  // Classic Line Rider starts gently and builds speed from gravity
+  sim.reset(sp.x, sp.y, 0.18);
   if (centerCamera) {
     state.followRider = true;
     state.cam.x = sp.x + 120;

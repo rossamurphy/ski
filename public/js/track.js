@@ -101,15 +101,15 @@ export function buildStockTrack(rawPoints, options = {}) {
 
   if (launchRamp) {
     const p0 = worldPoints[0];
-    const rampLen = 460;
-    const rampHeight = 250;
-    const steps = 22;
+    const rampLen = 360;
+    const rampHeight = 135;
+    const steps = 20;
     const rampPts = [];
     for (let i = 0; i <= steps; i++) {
       const u = i / steps; // 0 at top-left, 1 at p0
-      // Smooth ski-jump in-run curve: steep start, gentle horizontal exit into p0
+      // Gentle Line Rider drop-in curve into the first price point
       const x = p0.x - rampLen * (1 - u);
-      const ease = Math.pow(1 - u, 2.15);
+      const ease = Math.pow(1 - u, 1.85);
       const y = p0.y - rampHeight * ease;
       rampPts.push({ x, y });
     }
@@ -125,7 +125,7 @@ export function buildStockTrack(rawPoints, options = {}) {
     }
     spawn = {
       x: rampPts[1].x + 14,
-      y: rampPts[1].y - 34,
+      y: rampPts[1].y - 28,
     };
   }
 
