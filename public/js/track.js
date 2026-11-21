@@ -58,7 +58,8 @@ export function buildLaunchRamp(anchorX, anchorY) {
 export function buildStockTrack(rawPoints, options = {}) {
   const {
     steepness = 1.0, // 0.3 to 2.5
-    smoothness = 2, // 0 to 20 passes
+    smoothness = 10, // 0 to 20 passes
+    tiltDeg = 0, // -40 to +40 degrees (+ tilts right side downhill)
     launchRamp = true,
     targetWidth = 4600,
     baseHeight = 620,
@@ -104,10 +105,18 @@ export function buildStockTrack(rawPoints, options = {}) {
   const dx = totalWidth / (smoothed.length - 1);
 
   // Convert each price point to world coordinates (Y increases downward, so higher price = smaller Y)
+  const midX = totalWidth * 0.5;
+  const rad = (tiltDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+
   const worldPoints = smoothed.map((p, i) => {
-    const x = i * dx;
+    const ux = i * dx;
     const norm = (p.close - minPrice) / priceSpan; // 0 = lowest, 1 = highest
-    const y = (0.5 - norm) * verticalSpan;
+    const uy = (0.5 - norm) * verticalSpan;
+    // Rotate around chart center (midX, 0): positive tiltDeg rotates clockwise (downhill to the right)
+    const x = (ux - midX) * cos - uy * sin + midX;
+    const y = (ux - midX) * sin + uy * cos;
     return {
       x,
       y,
@@ -178,8 +187,8 @@ export function buildStockTrack(rawPoints, options = {}) {
         pctChange: 0,
       };
     }
-    if (worldX >= worldPoints[worldPoints.length - 1].x) {
-      const last = worldPoints[worldPoints.length - 1];
+    const last = worldPoints[worldPoints.length - 1];
+    if (worldX >= last.x) {
       return {
         ...last,
         onRamp: false,
@@ -187,11 +196,18 @@ export function buildStockTrack(rawPoints, options = {}) {
         pctChange: ((last.rawPrice - startPrice) / Math.max(startPrice, 1e-6)) * 100,
       };
     }
-    const idxFloat = worldX / dx;
-    const i = Math.max(0, Math.min(worldPoints.length - 2, Math.floor(idxFloat)));
-    const frac = idxFloat - i;
+    // Find bracketing segment (works even when the chart is rotated)
+    let i = 0;
+    for (let k = 0; k < worldPoints.length - 1; k++) {
+      if (worldPoints[k + 1].x >= worldX) {
+        i = k;
+        break;
+      }
+    }
     const a = worldPoints[i];
     const b = worldPoints[i + 1];
+    const span = Math.max(b.x - a.x, 1e-6);
+    const frac = Math.max(0, Math.min(1, (worldX - a.x) / span));
     const price = a.rawPrice + (b.rawPrice - a.rawPrice) * frac;
     const t = a.t + (b.t - a.t) * frac;
     const y = a.y + (b.y - a.y) * frac;
@@ -201,7 +217,7 @@ export function buildStockTrack(rawPoints, options = {}) {
       t,
       price,
       onRamp: false,
-      progress: worldX / totalWidth,
+      progress: i / Math.max(worldPoints.length - 1, 1),
       pctChange: ((price - startPrice) / Math.max(startPrice, 1e-6)) * 100,
     };
   }

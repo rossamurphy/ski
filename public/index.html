@@ -41,8 +41,14 @@
 
       <label class="top-smooth" title="Smoothness (0 = raw ticks, 20 = ultra-smooth)">
         <span>Smooth</span>
-        <input id="smoothSlider" type="range" min="0" max="20" step="1" value="2" />
-        <strong id="smoothVal">2</strong>
+        <input id="smoothSlider" type="range" min="0" max="20" step="1" value="10" />
+        <strong id="smoothVal">10</strong>
+      </label>
+
+      <label class="top-smooth" title="Tilt / rotate the whole chart (+ tilts downhill, - tilts uphill)">
+        <span>Tilt</span>
+        <input id="tiltSlider" type="range" min="-40" max="40" step="1" value="0" />
+        <strong id="tiltVal">0°</strong>
       </label>
     </header>
 
@@ -111,13 +117,16 @@
           <button data-tool="pan" class="active" title="Pan camera (drag) or pinch/scroll to zoom (1)">
             ✋ Pan
           </button>
-          <button data-tool="ramp" title="Click or drag anywhere to move the starting on-ramp (2)">
+          <button data-tool="rotate" title="Drag up/down on canvas to rotate/tilt the whole chart (2)">
+            ↻ Rotate
+          </button>
+          <button data-tool="ramp" title="Click or drag anywhere to move the starting on-ramp (3)">
             📐 Move Ramp
           </button>
-          <button data-tool="pencil" title="Draw solid ink track on chart (3)">
+          <button data-tool="pencil" title="Draw solid ink track on chart (4)">
             ✏️ Draw
           </button>
-          <button data-tool="eraser" title="Erase your drawn lines (4)">
+          <button data-tool="eraser" title="Erase your drawn lines (5)">
             🧹 Erase
           </button>
         </div>

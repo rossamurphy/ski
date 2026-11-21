@@ -268,7 +268,7 @@ body {
 }
 
 .top-smooth input[type='range'] {
-  width: 78px;
+  width: 68px;
   accent-color: var(--ink);
   cursor: pointer;
 }
@@ -276,7 +276,7 @@ body {
 .top-smooth strong {
   font-family: var(--mono);
   color: var(--ink);
-  min-width: 16px;
+  min-width: 26px;
   text-align: right;
 }
 

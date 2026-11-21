@@ -313,6 +313,27 @@ export class RiderSimulation {
         }
       }
 
+      // Gentle self-righting stabilization while mounted so small bumps don't randomly flip him
+      if (this.mounted) {
+        const { tail, nose, head } = this.p;
+        const cx = (tail.x + nose.x) * 0.5;
+        const cy = (tail.y + nose.y) * 0.5;
+        // Subtle upward bias on head relative to sled keeps rider balanced over undulations
+        const headRelY = head.y - cy;
+        if (headRelY > -24) {
+          head.y -= 0.035 * dt;
+          tail.y += 0.015 * dt;
+          nose.y += 0.015 * dt;
+        }
+        // Very gentle air-leveling so he lands on his skis more often
+        const tilt = nose.y - tail.y;
+        if (!anySledGrounded && Math.abs(tilt) > 6) {
+          nose.y -= Math.sign(tilt) * 0.018 * dt;
+          tail.y += Math.sign(tilt) * 0.018 * dt;
+        }
+        void cx;
+      }
+
       // 3. Constraint relaxation
       for (let iter = 0; iter < 6; iter++) {
         for (const c of this.constraints) {
@@ -368,13 +389,13 @@ export class RiderSimulation {
       this.jumpCooldown = 0.28;
     }
 
-    // Check upside-down crash on sled (require sustained inversion, not momentary spike bumps)
+    // Check upside-down crash on sled (only on real sustained inversion, very forgiving)
     if (this.mounted && anySledGrounded) {
       const { tail, backTop } = this.p;
       const upY = backTop.y - tail.y; // normally ~ -11 (backTop is above tail)
-      if (upY > 7.5) {
+      if (upY > 8.5) {
         this.upsideDownFrames++;
-        if (this.upsideDownFrames >= 8) {
+        if (this.upsideDownFrames >= 16) {
           this.bail();
         }
       } else {
@@ -462,8 +483,8 @@ export class RiderSimulation {
           pt.x += seg.nx * push;
           pt.y += seg.ny * push;
 
-          // Head hitting the track hard causes a bail (forgiving on light grazes)
-          if (pt.isHead && this.mounted && -vn > 1.35) {
+          // Head hitting the track very hard causes a bail (forgiving on bumps)
+          if (pt.isHead && this.mounted && -vn > 2.4) {
             this.bail();
           }
 
@@ -507,7 +528,7 @@ export class RiderSimulation {
         const vy = pt.y - pt.oy;
         const vn = vx * nx + vy * ny;
 
-        if (pt.isHead && this.mounted && -vn > 1.45) {
+        if (pt.isHead && this.mounted && -vn > 2.4) {
           this.bail();
         }
 

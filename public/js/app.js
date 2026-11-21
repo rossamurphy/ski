@@ -39,6 +39,8 @@ const steepSlider = document.getElementById('steepSlider');
 const steepVal = document.getElementById('steepVal');
 const smoothSlider = document.getElementById('smoothSlider');
 const smoothVal = document.getElementById('smoothVal');
+const tiltSlider = document.getElementById('tiltSlider');
+const tiltVal = document.getElementById('tiltVal');
 const rampToggle = document.getElementById('rampToggle');
 const fitViewBtn = document.getElementById('fitViewBtn');
 const zoomInBtn = document.getElementById('zoomInBtn');
@@ -60,9 +62,10 @@ const state = {
 
   // Track & physics options
   steepness: 1.0,
-  smoothness: 2,
+  smoothness: 10,
+  tiltDeg: 0,
   launchRamp: true,
-  tool: 'pan', // 'pan' | 'ramp' | 'pencil' | 'eraser'
+  tool: 'pan', // 'pan' | 'rotate' | 'ramp' | 'pencil' | 'eraser'
 
   // Built track + user-drawn strokes (each stroke is an array of segments)
   track: null,
@@ -159,6 +162,7 @@ function rebuildTrack(resetCamera = true) {
   state.track = buildStockTrack(state.rawPoints, {
     steepness: state.steepness,
     smoothness: state.smoothness,
+    tiltDeg: state.tiltDeg,
     launchRamp: state.launchRamp,
   });
   rebuildGrid();
@@ -494,10 +498,23 @@ steepSlider.addEventListener('input', () => {
   rebuildTrack(false);
 });
 
+function setTilt(deg) {
+  const clamped = Math.max(-40, Math.min(40, Math.round(deg)));
+  if (clamped === state.tiltDeg) return;
+  state.tiltDeg = clamped;
+  tiltSlider.value = String(clamped);
+  tiltVal.textContent = `${clamped > 0 ? '+' : ''}${clamped}°`;
+  rebuildTrack(false);
+}
+
 smoothSlider.addEventListener('input', () => {
   state.smoothness = Number(smoothSlider.value);
   smoothVal.textContent = String(state.smoothness);
   rebuildTrack(false);
+});
+
+tiltSlider.addEventListener('input', () => {
+  setTilt(Number(tiltSlider.value));
 });
 
 rampToggle.addEventListener('change', () => {
@@ -604,6 +621,14 @@ canvas.addEventListener('pointerdown', (e) => {
     return;
   }
 
+  if (state.tool === 'rotate') {
+    state.followRider = false;
+    state.pointer.rotateStartY = sy;
+    state.pointer.rotateStartDeg = state.tiltDeg;
+    canvas.classList.add('cursor-grabbing');
+    return;
+  }
+
   // Move Ramp tool OR grabbing the blue ramp directly while paused in Pan mode
   if (
     state.tool === 'ramp' ||
@@ -671,6 +696,13 @@ canvas.addEventListener('pointermove', (e) => {
   state.pointer.worldY = w.y;
 
   if (!state.pointer.down) return;
+
+  if (state.tool === 'rotate') {
+    // Dragging down tilts clockwise (more downhill to the right); dragging up tilts uphill
+    const dy = sy - state.pointer.rotateStartY;
+    setTilt(state.pointer.rotateStartDeg + dy * 0.22);
+    return;
+  }
 
   if (state.draggingRamp) {
     moveLaunchRamp(w.x + state.rampDragOffset.x, w.y + state.rampDragOffset.y);
@@ -790,12 +822,15 @@ window.addEventListener('keydown', (e) => {
       setTool('pan');
       break;
     case 'Digit2':
-      setTool('ramp');
+      setTool('rotate');
       break;
     case 'Digit3':
-      setTool('pencil');
+      setTool('ramp');
       break;
     case 'Digit4':
+      setTool('pencil');
+      break;
+    case 'Digit5':
       setTool('eraser');
       break;
   }
